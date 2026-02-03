@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            background-color: #f5f2e9; 
+            color: #2a2a2a;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            scrollbar-width: none; 
+        }
+		
+		* {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+       /* --- SMOOTH TRANSITION OVERLAY --- */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f5f2e9;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column; /* <--- THIS STACKS THEM VERTICALLY */
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: all;
+        }
+
+        #intro-text {
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700;
+            font-size: 3rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            opacity: 0;
+            animation: introSequence 2.5s forwards;
+        }
+
+        #intro-subtext {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #555; /* Slightly lighter than main text */
+            margin-top: 1rem; /* Space between title and subtitle */
+            opacity: 0;
+            /* Re-use the same animation, but delay it by 0.2s for a smooth effect */
+            animation: introSequence 2.5s forwards;
+            animation-delay: 0.2s; 
+        }
+
+        @keyframes introSequence {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+            30% { opacity: 1; transform: translateY(0) scale(1); }
+            80% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-10px) scale(1.05); }
+        }
+
+        .overlay-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        /* -------------------------------- */
+
+        #scroll-container {
+            height: 900vh; 
+            width: 1px;
+            pointer-events: none;
+        }
+
+        #fixed-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        canvas { 
+            display: block;
+            cursor: none; 
+        }
+
+        #cursor-brush {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #2a2a2a;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 50;
+            transition: width 0.2s, height 0.2s, opacity 0.3s;
+        }
+
+        .ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem; 
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            pointer-events: auto;
+        }
+
+        .brand {
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+
+        .top-menu {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .menu-item {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu-item::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0%;
+            height: 1px;
+            background: #1a1a1a;
+            transition: width 0.3s ease;
+        }
+
+        .menu-item:hover::after {
+            width: 100%;
+        }
+
+        .gallery-footer {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            padding-bottom: 0.5rem;
+        }
+
+        .ticker-wrap {
+            display: inline-block;
+            white-space: nowrap;
+            animation: tickerScroll 40s linear infinite;
+        }
+
+        .ticker-item {
+            display: inline-block;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            color: #3d3b34;
+            padding-right: 2rem;
+        }
+
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        #contact-section {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 30;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 5vw;
+        }
+
+        .contact-card {
+            display: block;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem 2rem;
+            margin: 1rem 0;
+            width: 350px;
+            max-width: 85vw;
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            transform: translateX(120%);
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.6s;
+            pointer-events: auto;
+        }
+
+        .contact-card:hover {
+            background: #ffffff;
+            transform: translateX(-15px) !important;
+        }
+
+        .contact-card h3 {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-card p {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1a1a1a;
+        }
+
+        /* --- BACK TO TOP BUTTON --- */
+        #back-to-top {
+            margin-top: 1rem;
+            padding: 1rem 2rem;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            border: 1px solid #1a1a1a;
+            background: transparent;
+            cursor: pointer;
+            pointer-events: auto;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        #back-to-top:hover {
+            background: #1a1a1a;
+            color: #f5f2e9;
+        }
+
+        #loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-top-color: #2a2a2a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            z-index: 100;
+        }
+
+        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        #hint {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(0, 0, 0, 0.3);
+            z-index: 40;
+            transition: opacity 0.5s, color 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-overlay" style="opacity: 1;">
+        <div id="intro-text">Lumina.</div>
+		<div id="intro-subtext">Art Gallery Experience Redefined.</div>
+    </div>
+
+    <div id="scroll-container"></div>
+
+    <div id="fixed-view">
+        <canvas id="artCanvas"></canvas>
+    </div>
+    
+    <div id="cursor-brush"></div>
+
+    <div class="ui-layer">
+        <div class="header-row">
+            <a href="#" onclick="window.scrollTo(0,0); return false;" class="brand">Lumina.</a>
+            <div class="top-menu">
+                <a href="gallery.html" class="menu-item transition-link">Gallery View</a>
+                <a href="#" onclick="scrollToContact(); return false;" class="menu-item">Contact</a>
+            </div>
+        </div>
+
+        <div id="hint">Hover to Paint</div>
+        <div class="gallery-footer">
+            <div class="ticker-wrap">
+                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
+                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
+                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
+                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
+                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
+            </div>
+        </div>
+    </div>
+
+    <div id="contact-section">
+        <div class="flex flex-col items-end">
+            <a href="https://instagram.com/agiizart" target="_blank" class="contact-card" style="transition-delay: 0.1s;">
+                <h3>Instagram</h3>
+                <p>@agiizart</p>
+            </a>
+            
+            <a href="https://instagram.com/agiizart" class="contact-card" style="transition-delay: 0.2s;">
+                <h3>Portfolio</h3>
+                <p>@agiizart</p>
+            </a>
+            
+            <a href="https://www.google.com/maps/search/Quezon+City%2C+Philippines" target="_blank" class="contact-card" style="transition-delay: 0.3s;">
+                <h3>Location</h3>
+                <p>Quezon City</p>
+            </a>
+            
+            <a href="#" class="contact-card" style="transition-delay: 0.4s;">
+                <h3>Webpage by</h3>
+                <p>@Coolitz.</p>
+            </a>
+
+            <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="transition-delay: 0.5s;">
+                Back to Top ↑
+            </button>
+        </div>
+    </div>
+
+    <div id="loader"></div>
+
+    <script>
+        const SET_1 = { color: 'glimpse.png', line: 'glimpse_1.png' };
+        const SET_2 = { color: 'miyabi 2.png', line: 'miyabi.png' };
+        
+        const BRUSH_RADIUS = 60; 
+
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const loader = document.getElementById('loader');
+        const hint = document.getElementById('hint');
+        const contactCards = document.querySelectorAll('.contact-card');
+        const backToTopBtn = document.getElementById('back-to-top');
+        const cursorBrush = document.getElementById('cursor-brush');
+        const overlay = document.getElementById('intro-overlay');
+
+        // --- IMPROVED TRANSITION LOGIC ---
+        
+        // 1. Force overlay hidden on normal load (after animation)
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                overlay.classList.add('overlay-hidden');
+            }, 2300);
+        });
+
+        // 2. Fix the "Blink" on Back Button (BFCache restore)
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                // If page is restored from cache, force overlay hidden immediately
+                // preventing the "fade-in" stuck state
+                overlay.classList.add('overlay-hidden');
+            }
+        });
+
+        // 3. Smooth Exit
+        const transitionLinks = document.querySelectorAll('.transition-link');
+        transitionLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                const target = link.href;
+                document.getElementById('intro-text').style.display = 'none'; // Hide text
+                overlay.classList.remove('overlay-hidden'); // Show white screen
+                setTimeout(() => {
+                    window.location.href = target;
+                }, 800);
+            });
+        });
+        // ---------------------------------
+
+        function scrollToContact() {
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        const images = {
+            s1Color: new Image(), s1Line: new Image(),
+            s2Color: new Image(), s2Line: new Image()
+        };
+
+        const mask1Canvas = document.createElement('canvas');
+        const mask1Ctx = mask1Canvas.getContext('2d');
+        const mask2Canvas = document.createElement('canvas');
+        const mask2Ctx = mask2Canvas.getContext('2d');
+        
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+
+        let loaded = false;
+        let scrollProgress = 0;
+        let activeScene = 1; 
+
+        let loadedCount = 0;
+        function checkReady() {
+            loadedCount++;
+            if (loadedCount === 4) startApp();
+        }
+
+        images.s1Color.src = SET_1.color;
+        images.s1Line.src = SET_1.line;
+        images.s2Color.src = SET_2.color;
+        images.s2Line.src = SET_2.line;
+
+        Object.values(images).forEach(img => {
+            img.onload = checkReady;
+            img.onerror = checkReady; 
+        });
+
+        function startApp() {
+            loaded = true;
+            loader.style.display = 'none';
+            resize();
+            requestAnimationFrame(animate);
+        }
+
+        function getViewParams(isMiyabi, progress) {
+            const viewW = window.innerWidth;
+            const viewH = window.innerHeight;
+            const refImg = isMiyabi ? images.s2Color : images.s1Color;
+            const imgW = refImg.width || 800;
+            const imgH = refImg.height || 1000;
+            const padding = 120;
+            const baseScale = Math.min((viewW - padding) / imgW, (viewH - padding) / imgH);
+            const settledW = imgW * baseScale;
+            const settledH = imgH * baseScale;
+
+            let currentScale, currentOpacity, translateX, translateY;
+            translateX = viewW / 2;
+            translateY = viewH / 2;
+
+            if (!isMiyabi) {
+                currentOpacity = Math.max(0, 1 - (progress * 2.0)); 
+                currentScale = 1 - (progress * 0.3);
+            } else {
+                const start = 0.2;
+                const end = 0.6;
+                const norm = Math.max(0, Math.min(1, (progress - start) / (end - start)));
+                const zoomFactor = 6.0;
+                currentScale = zoomFactor - (norm * (zoomFactor - 1));
+                currentOpacity = norm;
+
+                if (progress > 0.8) {
+                    const slideP = (progress - 0.8) / 0.2;
+                    translateX = (viewW / 2) - (slideP * (viewW * 0.25));
+                    currentScale *= (1 - (slideP * 0.25));
+                    currentOpacity = 1.0;
+                }
+            }
+
+            return { 
+                scale: currentScale, 
+                opacity: currentOpacity, 
+                tx: translateX, 
+                ty: translateY, 
+                sw: settledW, 
+                sh: settledH 
+            };
+        }
+
+        function paint(clientX, clientY) {
+            if (!loaded) return;
+            
+            cursorBrush.style.top = `${clientY}px`;
+            cursorBrush.style.left = `${clientX}px`;
+
+            const isMiyabi = activeScene === 2;
+            const params = getViewParams(isMiyabi, scrollProgress);
+            const targetCtx = isMiyabi ? mask2Ctx : mask1Ctx;
+            
+            const paintX = (clientX - params.tx) / params.scale + (params.sw / 2);
+            const paintY = (clientY - params.ty) / params.scale + (params.sh / 2);
+
+            targetCtx.globalCompositeOperation = 'source-over';
+            targetCtx.beginPath();
+            targetCtx.arc(paintX, paintY, BRUSH_RADIUS / params.scale, 0, Math.PI * 2);
+            
+            const brushAlpha = 0.05; 
+            targetCtx.fillStyle = `rgba(255, 255, 255, ${brushAlpha})`;
+            targetCtx.shadowBlur = 30 / params.scale;
+            targetCtx.shadowColor = `rgba(255, 255, 255, ${brushAlpha})`;
+            targetCtx.fill();
+            targetCtx.shadowBlur = 0;
+        }
+
+        window.addEventListener('mousemove', (e) => paint(e.clientX, e.clientY));
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            paint(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        window.addEventListener('resize', resize);
+
+        function updateMaskSize(maskCanvas, maskCtx, img) {
+            const padding = 120;
+            const scale = Math.min((window.innerWidth - padding) / (img.width || 800), (window.innerHeight - padding) / (img.height || 1000));
+            const newW = (img.width || 800) * scale;
+            const newH = (img.height || 1000) * scale;
+
+            if (maskCanvas.width !== newW || maskCanvas.height !== newH) {
+                const buffer = document.createElement('canvas');
+                buffer.width = maskCanvas.width;
+                buffer.height = maskCanvas.height;
+                buffer.getContext('2d').drawImage(maskCanvas, 0, 0);
+
+                maskCanvas.width = newW;
+                maskCanvas.height = newH;
+                maskCtx.drawImage(buffer, 0, 0, newW, newH);
+            }
+        }
+
+        function resize() {
+            if (!loaded) return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            updateMaskSize(mask1Canvas, mask1Ctx, images.s1Color);
+            updateMaskSize(mask2Canvas, mask2Ctx, images.s2Color);
+            
+            const refImg = activeScene === 1 ? images.s1Color : images.s2Color;
+            const scale = Math.min((canvas.width - 120) / (refImg.width || 800), (canvas.height - 120) / (refImg.height || 1000));
+            tempCanvas.width = (refImg.width || 800) * scale;
+            tempCanvas.height = (refImg.height || 1000) * scale;
+        }
+
+        window.addEventListener('scroll', () => {
+            const max = document.documentElement.scrollHeight - window.innerHeight;
+            scrollProgress = Math.min(1, Math.max(0, window.scrollY / max));
+            
+            const targetScene = scrollProgress < 0.35 ? 1 : 2;
+            if (targetScene !== activeScene) {
+                activeScene = targetScene;
+                const refImg = activeScene === 1 ? images.s1Color : images.s2Color;
+                const scale = Math.min((window.innerWidth - 120) / (refImg.width || 800), (window.innerHeight - 120) / (refImg.height || 1000));
+                tempCanvas.width = (refImg.width || 800) * scale;
+                tempCanvas.height = (refImg.height || 1000) * scale;
+            }
+
+            if (scrollProgress > 0.85) {
+                hint.innerText = "Connect with us";
+                hint.style.color = "#1a1a1a";
+                canvas.style.cursor = 'auto';
+            } else {
+                hint.innerText = targetScene === 1 ? "Hover to Reveal Glimpse" : "Hover to Reveal Miyabi";
+                hint.style.color = "rgba(0,0,0,0.3)";
+                canvas.style.cursor = 'none';
+            }
+
+            // Animate Contact Cards & Back to Top
+            const contactEntry = 0.8;
+            if (scrollProgress > contactEntry) {
+                const p = (scrollProgress - contactEntry) / (1 - contactEntry);
+                
+                // Animate Cards
+                contactCards.forEach((card) => {
+                    const slide = Math.max(0, 120 - (p * 180));
+                    card.style.transform = `translateX(${slide}%)`;
+                    card.style.opacity = p;
+                });
+
+                // Animate Back To Top Button
+                // It comes in slightly after the cards
+                const btnSlide = Math.max(0, 120 - (p * 180));
+                backToTopBtn.style.transform = `translateX(${btnSlide}%)`;
+                backToTopBtn.style.opacity = p;
+
+            } else {
+                contactCards.forEach(card => {
+                    card.style.transform = `translateX(120%)`;
+                    card.style.opacity = 0;
+                });
+                // Reset button
+                backToTopBtn.style.transform = `translateX(120%)`;
+                backToTopBtn.style.opacity = 0;
+            }
+        }, { passive: true });
+
+        function drawArt(colorImg, lineImg, progress, isMiyabi) {
+            const params = getViewParams(isMiyabi, progress);
+            if (params.opacity <= 0) return;
+
+            ctx.save();
+            ctx.translate(params.tx, params.ty);
+            ctx.scale(params.scale, params.scale);
+            ctx.translate(-params.sw / 2, -params.sh / 2);
+            ctx.globalAlpha = params.opacity;
+
+            ctx.drawImage(lineImg, 0, 0, params.sw, params.sh);
+
+            const targetMask = isMiyabi ? mask2Canvas : mask1Canvas;
+            
+            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(targetMask, 0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.globalCompositeOperation = 'source-in';
+            tempCtx.drawImage(colorImg, 0, 0, params.sw, params.sh);
+            tempCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(tempCanvas, 0, 0);
+
+            ctx.restore();
+        }
+
+        function animate() {
+            if (!loaded) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawArt(images.s1Color, images.s1Line, scrollProgress, false);
+            drawArt(images.s2Color, images.s2Line, scrollProgress, true);
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina. | Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+        /* --- GLOBAL RESET --- */
+        * { scrollbar-width: none; -ms-overflow-style: none; }
+        *::-webkit-scrollbar { display: none; }
+
+        body {
+            background-color: #f5f2e9;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- LOADING OVERLAY --- */
+        #intro-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: #f5f2e9; 
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        #intro-text {
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700;
+            font-size: 3rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            opacity: 0;
+            animation: introSequence 2.5s forwards;
+        }
+
+        #intro-subtext {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #555;
+            margin-top: 1rem;
+            opacity: 0;
+            animation: introSequence 2.5s forwards;
+            animation-delay: 0.2s; 
+        }
+
+        @keyframes introSequence {
+            0% { opacity: 0; transform: translateY(20px); }
+            30%, 80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .overlay-hidden { opacity: 0 !important; pointer-events: none !important; }
+
+        /* --- NAVIGATION --- */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 50;
+            pointer-events: none; /* Allows clicks to pass through empty areas */
+            opacity: 0;
+            animation: fadeInNav 1s ease-out 2.5s forwards;
+        }
+
+        @keyframes fadeInNav { to { opacity: 1; } }
+
+        /* Brand Styling */
+        .brand {
+            pointer-events: auto;
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            text-decoration: none;
+            position: relative;
+        }
+
+        /* --- YOUR CUSTOM MENU ITEM --- */
+        .menu-item {
+            pointer-events: auto; /* Required to make it clickable over the gallery */
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .menu-item::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0%;
+            height: 1px;
+            background: #1a1a1a;
+            transition: width 0.3s ease;
+        }
+
+        .menu-item:hover::after {
+            width: 100%;
+        }
+
+        /* --- MAIN WRAPPER --- */
+        /* Renamed to avoid Tailwind .container conflict */
+        .gallery-wrapper {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        /* --- THE STRIP --- */
+        .gallery-strip {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            border-right: 1px solid rgba(0,0,0,0.05);
+            transition: flex 0.8s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.8s ease;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gallery-strip:hover { 
+            flex: 2.5; 
+            background-color: #fcfbf7; 
+        }
+
+        /* --- THE INNER CARD --- */
+        .art-card {
+            position: relative;
+            width: 100%;
+            height: 80%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        /* --- ART LAYERS --- */
+        .art-layer {
+            position: absolute;
+            max-width: 85%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform;
+        }
+
+        .line-art { 
+            opacity: 1; 
+            z-index: 1; 
+            filter: grayscale(100%) contrast(1.1); 
+        }
+
+        .color-art { 
+            opacity: 0; 
+            z-index: 2; 
+        }
+
+        .gallery-strip:hover .color-art { opacity: 1; }
+        .gallery-strip:hover .art-layer { transform: scale(1.05); }
+
+        /* --- CARD INFO --- */
+        .card-info {
+            position: absolute;
+            bottom: 4rem;
+            left: 3rem;
+            z-index: 20;
+            opacity: 0.4;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+        }
+
+        .gallery-strip:hover .card-info { 
+            opacity: 1; 
+            transform: translateX(10px); 
+        }
+
+        .card-title { 
+            font-family: 'Syncopate', sans-serif; 
+            font-size: 1.2rem; 
+            font-weight: 700; 
+            color: #1a1a1a; 
+            margin: 0; 
+        }
+
+        /* --- MOBILE / PORTRAIT EDGE CASE --- */
+        @media (max-width: 768px) or (orientation: portrait) {
+            .gallery-wrapper { flex-direction: column; }
+            
+            .gallery-strip { 
+                width: 100%; 
+                border-right: none; 
+                border-bottom: 1px solid rgba(0,0,0,0.05); 
+            }
+            
+            .gallery-strip:hover { flex: 1.5; }
+            .card-info { bottom: 2rem; left: 2rem; }
+            .art-card { height: 60%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gallery-strip, .art-layer { transition: none !important; transform: none !important; }
+            #intro-overlay { display: none; }
+            .nav { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-overlay">
+        <div id="intro-text">Lumina.</div>
+        <div id="intro-subtext">Art Gallery Experience Redefined.</div>
+    </div>
+
+    <nav class="nav">
+        <a href="AdrianArtReimagined.html" class="brand transition-link">Lumina.</a>
+        
+        <a href="AdrianArtReimagined.html" class="menu-item transition-link">Back to Experience</a>
+    </nav>
+
+    <div class="gallery-wrapper">
+        <div class="gallery-strip">
+            <div class="art-card">
+                <img src="glimpse_1.png" class="art-layer line-art" alt="Glimpse Sketch">
+                <img src="glimpse.png" class="art-layer color-art" alt="Glimpse Color">
+            </div>
+            <div class="card-info"><h2 class="card-title">Glimpse</h2></div>
+        </div>
+
+        <div class="gallery-strip">
+            <div class="art-card">
+                <img src="miyabi.png" class="art-layer line-art" alt="Miyabi Sketch">
+                <img src="miyabi 2.png" class="art-layer color-art" alt="Miyabi Color">
+            </div>
+            <div class="card-info"><h2 class="card-title">Miyabi</h2></div>
+        </div>
+    </div>
+
+    <script>
+        const overlay = document.getElementById('intro-overlay');
+
+        window.addEventListener('load', () => {
+            setTimeout(() => overlay.classList.add('overlay-hidden'), 2300);
+        });
+
+        window.addEventListener('pageshow', (e) => {
+            if (e.persisted) overlay.classList.add('overlay-hidden');
+        });
+
+        document.querySelectorAll('.transition-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = link.href;
+                document.getElementById('intro-text').style.opacity = '0';
+                document.getElementById('intro-subtext').style.opacity = '0';
+                overlay.classList.remove('overlay-hidden');
+                setTimeout(() => window.location.href = target, 800);
+            });
+        });
+    </script>
+</body>
+</html>
