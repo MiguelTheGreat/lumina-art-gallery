@@ -305,6 +305,8 @@
             justify-content: center;
             align-items: center;
             clip-path: inset(100% 0 0 0);
+            contain: layout style paint;
+            transform: translateZ(0);
         }
 
         body.gallery-ready .gallery-strip {
@@ -317,7 +319,7 @@
 
         .gallery-strip:nth-child(1) { transition-delay: 0s, 0s, 0s, 0.08s; }
         .gallery-strip:nth-child(2) { transition-delay: 0s, 0s, 0s, 0.2s; }
-        .gallery-strip:nth-child(3) { transition-delay: 0s, 0s, 0s, 0.32s; border-right: none; }
+        .gallery-strip:last-child { border-right: none; }
 
         /* When hovering any strip, gently recede siblings */
         .gallery-wrapper:hover .gallery-strip:not(:hover) {
@@ -479,6 +481,8 @@
             opacity: 0;
             pointer-events: none;
             clip-path: inset(8% 8% 8% 8% round 12px);
+            will-change: opacity, clip-path;
+            transform: translateZ(0);
             transition: opacity 0.55s var(--ease-expo), clip-path 0.7s var(--ease-expo);
         }
 
@@ -552,6 +556,7 @@
             align-items: center;
             user-select: none;
             overflow: hidden;
+            will-change: opacity, transform;
             transition: opacity 0.35s ease, transform 0.55s var(--ease-expo);
         }
 
@@ -591,17 +596,21 @@
             height: 100%;
             object-fit: contain;
             clip-path: inset(0 50% 0 0);
+            will-change: clip-path;
+            transform: translateZ(0);
         }
 
         .compare-divider {
             position: absolute;
             top: 0;
             bottom: 0;
-            left: 50%;
+            left: 0;
             width: 1.5px;
             background: rgba(245, 242, 233, 0.85);
             pointer-events: none;
             box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
         }
 
         .compare-handle {
@@ -875,12 +884,15 @@
         });
 
         // ============================================
-        // STRIP HOVER: RADIAL REVEAL ORIGIN & 3D PARALLAX (Cached Rects)
+        // STRIP HOVER: RADIAL REVEAL ORIGIN & rAF-BATCHED 3D PARALLAX
         // ============================================
         strips.forEach(strip => {
             const artCard = strip.querySelector('.art-card');
             const colorArt = strip.querySelector('.color-art');
             let cachedRect = null;
+            let tiltRaf = null;
+            let pendingX = 0;
+            let pendingY = 0;
 
             strip.addEventListener('mouseenter', (e) => {
                 cachedRect = strip.getBoundingClientRect();
@@ -895,13 +907,22 @@
 
             strip.addEventListener('mousemove', (e) => {
                 if (!cachedRect) cachedRect = strip.getBoundingClientRect();
-                const nx = ((e.clientX - cachedRect.left) / cachedRect.width - 0.5) * 2;
-                const ny = ((e.clientY - cachedRect.top) / cachedRect.height - 0.5) * 2;
-                artCard.style.transform = `perspective(900px) rotateY(${nx * 4.5}deg) rotateX(${-ny * 4.5}deg) translate3d(${nx * 8}px, ${ny * 6}px, 0)`;
+                pendingX = ((e.clientX - cachedRect.left) / cachedRect.width - 0.5) * 2;
+                pendingY = ((e.clientY - cachedRect.top) / cachedRect.height - 0.5) * 2;
+                if (!tiltRaf) {
+                    tiltRaf = requestAnimationFrame(() => {
+                        artCard.style.transform = `perspective(900px) rotateY(${pendingX * 4.5}deg) rotateX(${-pendingY * 4.5}deg) translate3d(${pendingX * 8}px, ${pendingY * 6}px, 0)`;
+                        tiltRaf = null;
+                    });
+                }
             }, { passive: true });
 
             strip.addEventListener('mouseleave', () => {
                 cachedRect = null;
+                if (tiltRaf) {
+                    cancelAnimationFrame(tiltRaf);
+                    tiltRaf = null;
+                }
                 artCard.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) translate3d(0, 0, 0)';
                 document.body.classList.remove('cursor-inspect');
                 cursorLabel.textContent = '';
@@ -913,7 +934,7 @@
         });
 
         // ============================================
-        // LIGHTBOX & INTERACTIVE COMPARE SLIDER
+        // LIGHTBOX & GPU-COMPOSITED COMPARE SLIDER
         // ============================================
         const lightbox = document.getElementById('lightbox');
         const compareStage = document.getElementById('compare-stage');
@@ -931,8 +952,9 @@
         function setComparePosition(ratio) {
             const clamped = Math.max(0, Math.min(1, ratio));
             const pct = clamped * 100;
+            const frameWidth = compareRect ? compareRect.width : compareFrame.offsetWidth;
             lbColor.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
-            compareDivider.style.left = `${pct}%`;
+            compareDivider.style.transform = `translate3d(${clamped * frameWidth}px, 0, 0)`;
         }
 
         function loadLightboxArtwork(idx, animateSwitch = false) {
@@ -958,11 +980,27 @@
             }
         }
 
+        lbLine.addEventListener('load', () => {
+            if (lightbox.classList.contains('is-open')) {
+                compareRect = null;
+                setComparePosition(0.5);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (lightbox.classList.contains('is-open')) {
+                compareRect = null;
+                setComparePosition(0.5);
+            }
+        }, { passive: true });
+
         function openLightbox(idx) {
             document.body.classList.remove('cursor-inspect');
             cursorLabel.textContent = '';
+            compareRect = null;
             loadLightboxArtwork(idx, false);
             lightbox.classList.add('is-open');
+            requestAnimationFrame(() => setComparePosition(0.5));
         }
 
         function closeLightbox() {
