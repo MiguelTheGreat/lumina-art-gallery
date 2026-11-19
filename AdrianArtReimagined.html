@@ -51,6 +51,22 @@
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
 
+        /* Artwork-adaptive ambient lighting layers (cross-fade smoothly between chapters) */
+        .ambient-glow {
+            position: fixed;
+            inset: -10%;
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+            will-change: opacity, transform;
+            transform: translateZ(0);
+            transition: opacity 1.35s var(--ease-expo);
+        }
+
+        .ambient-glow.is-active {
+            opacity: 1;
+        }
+
         /* Ambient vignette that breathes with scroll */
         #ambient-vignette {
             position: fixed;
@@ -872,6 +888,8 @@
 </head>
 <body>
     <div class="paper-grain" aria-hidden="true"></div>
+    <div id="ambient-glow-a" class="ambient-glow is-active" aria-hidden="true"></div>
+    <div id="ambient-glow-b" class="ambient-glow" aria-hidden="true"></div>
     <div id="ambient-vignette" aria-hidden="true"></div>
     <div id="scroll-progress-line" aria-hidden="true"></div>
 
@@ -1031,7 +1049,8 @@
                 subtitle: 'Digital Ink & Chromatic Study',
                 colorSrc: 'assets/glimpse.webp',
                 lineSrc: 'assets/glimpse_line.webp',
-                hint: 'Move Brush to Reveal Glimpse'
+                hint: 'Move Brush to Reveal Glimpse',
+                glow: 'radial-gradient(circle at 48% 46%, rgba(198, 152, 126, 0.28) 0%, rgba(224, 198, 174, 0.14) 42%, transparent 74%)'
             },
             {
                 id: 'reverie',
@@ -1040,7 +1059,8 @@
                 subtitle: 'Sunlit Portrait in Lavender & Ink',
                 colorSrc: 'assets/reverie.webp',
                 lineSrc: 'assets/reverie_line.webp',
-                hint: 'Move Brush to Reveal Reverie'
+                hint: 'Move Brush to Reveal Reverie',
+                glow: 'radial-gradient(circle at 52% 45%, rgba(154, 128, 206, 0.28) 0%, rgba(212, 168, 188, 0.14) 44%, transparent 75%)'
             },
             {
                 id: 'amber',
@@ -1049,7 +1069,8 @@
                 subtitle: 'Golden Hour Silhouette & Texture',
                 colorSrc: 'assets/amber.webp',
                 lineSrc: 'assets/amber_line.webp',
-                hint: 'Move Brush to Reveal Amber'
+                hint: 'Move Brush to Reveal Amber',
+                glow: 'radial-gradient(circle at 50% 48%, rgba(236, 170, 68, 0.30) 0%, rgba(164, 156, 102, 0.14) 45%, transparent 75%)'
             },
             {
                 id: 'sunshower',
@@ -1058,7 +1079,8 @@
                 subtitle: 'Motion, Breeze & After-Rain Light',
                 colorSrc: 'assets/sunshower.webp',
                 lineSrc: 'assets/sunshower_line.webp',
-                hint: 'Move Brush to Reveal Sunshower'
+                hint: 'Move Brush to Reveal Sunshower',
+                glow: 'radial-gradient(circle at 46% 52%, rgba(118, 174, 224, 0.28) 0%, rgba(228, 152, 182, 0.16) 44%, transparent 75%)'
             },
             {
                 id: 'miyabi',
@@ -1067,12 +1089,14 @@
                 subtitle: 'Cinematic Panorama Composition',
                 colorSrc: 'assets/miyabi.webp',
                 lineSrc: 'assets/miyabi_line.webp',
-                hint: 'Move Brush to Reveal Miyabi'
+                hint: 'Move Brush to Reveal Miyabi',
+                glow: 'radial-gradient(circle at 50% 48%, rgba(124, 148, 182, 0.26) 0%, rgba(188, 158, 118, 0.14) 45%, transparent 75%)'
             }
         ];
 
         const BRUSH_RADIUS = 64;
         const MAX_DPR = 2;
+        const STORAGE_KEY = 'lumina_canvas_state_v1';
 
         const canvas = document.getElementById('artCanvas');
         // Omit willReadFrequently to keep hardware GPU acceleration enabled
@@ -1096,6 +1120,156 @@
         const revealPct = document.getElementById('reveal-pct');
         const canvasControls = document.getElementById('canvas-controls');
         const tickerWrap = document.getElementById('ticker-wrap');
+        const ambientGlowA = document.getElementById('ambient-glow-a');
+        const ambientGlowB = document.getElementById('ambient-glow-b');
+
+        // ============================================
+        // ARTWORK-ADAPTIVE AMBIENT LIGHTING
+        // ============================================
+        let activeGlowSlot = 0;
+        let currentGlowIdx = -1;
+
+        function setAmbientGlow(sceneIdx) {
+            if (sceneIdx === currentGlowIdx) return;
+            currentGlowIdx = sceneIdx;
+            const gradient = SCENES[sceneIdx]?.glow || SCENES[0].glow;
+            const nextEl = activeGlowSlot === 0 ? ambientGlowB : ambientGlowA;
+            const prevEl = activeGlowSlot === 0 ? ambientGlowA : ambientGlowB;
+            nextEl.style.background = gradient;
+            nextEl.classList.add('is-active');
+            prevEl.classList.remove('is-active');
+            activeGlowSlot = 1 - activeGlowSlot;
+        }
+        ambientGlowA.style.background = SCENES[0].glow;
+        currentGlowIdx = 0;
+
+        // ============================================
+        // AUTOMATIC WEB AUDIO PAPER RUSTLE (No Opt-In)
+        // ============================================
+        let audioCtx = null;
+        let noiseBuffer = null;
+        let lastRustleAt = 0;
+
+        function ensureAudio() {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return null;
+            if (!audioCtx) {
+                audioCtx = new Ctx();
+                // Pre-generate 0.6s pink-ish paper noise buffer once
+                const len = Math.floor(audioCtx.sampleRate * 0.6);
+                noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                let b0 = 0, b1 = 0, b2 = 0;
+                for (let i = 0; i < len; i++) {
+                    const white = Math.random() * 2 - 1;
+                    b0 = 0.997 * b0 + white * 0.029;
+                    b1 = 0.985 * b1 + white * 0.032;
+                    b2 = 0.950 * b2 + white * 0.048;
+                    data[i] = (b0 + b1 + b2 + white * 0.18) * 1.45;
+                }
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        // Auto-unlock audio seamlessly on earliest user gesture
+        ['pointerdown', 'wheel', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+            window.addEventListener(evt, () => ensureAudio(), { once: true, passive: true });
+        });
+        ensureAudio();
+
+        function playPaperRustle() {
+            const nowMs = performance.now();
+            if (nowMs - lastRustleAt < 280) return;
+            lastRustleAt = nowMs;
+
+            const ac = ensureAudio();
+            if (!ac || !noiseBuffer || ac.state !== 'running') return;
+
+            const t = ac.currentTime;
+
+            // Layer 1: Crisp parchment slide / page turn swoosh
+            const src1 = ac.createBufferSource();
+            src1.buffer = noiseBuffer;
+
+            const bp1 = ac.createBiquadFilter();
+            bp1.type = 'bandpass';
+            bp1.frequency.setValueAtTime(1150, t);
+            bp1.frequency.exponentialRampToValueAtTime(2450, t + 0.14);
+            bp1.frequency.exponentialRampToValueAtTime(920, t + 0.42);
+            bp1.Q.value = 1.1;
+
+            const hp = ac.createBiquadFilter();
+            hp.type = 'highpass';
+            hp.frequency.value = 340;
+
+            const gain1 = ac.createGain();
+            gain1.gain.setValueAtTime(0.0001, t);
+            gain1.gain.linearRampToValueAtTime(0.24, t + 0.045);
+            gain1.gain.exponentialRampToValueAtTime(0.09, t + 0.16);
+            gain1.gain.linearRampToValueAtTime(0.16, t + 0.24);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, t + 0.46);
+
+            src1.connect(bp1);
+            bp1.connect(hp);
+            hp.connect(gain1);
+            gain1.connect(ac.destination);
+            src1.start(t);
+            src1.stop(t + 0.48);
+
+            // Layer 2: Soft low-frequency paper settle thump
+            const src2 = ac.createBufferSource();
+            src2.buffer = noiseBuffer;
+            const lp = ac.createBiquadFilter();
+            lp.type = 'lowpass';
+            lp.frequency.setValueAtTime(480, t);
+            const gain2 = ac.createGain();
+            gain2.gain.setValueAtTime(0.0001, t + 0.06);
+            gain2.gain.linearRampToValueAtTime(0.11, t + 0.13);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
+
+            src2.connect(lp);
+            lp.connect(gain2);
+            gain2.connect(ac.destination);
+            src2.start(t + 0.06);
+            src2.stop(t + 0.38);
+        }
+
+        // ============================================
+        // PERSIST RECORDED PAINT STATE FOR GALLERY & SHARING
+        // ============================================
+        function loadSavedStates() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        let saveTimer = null;
+        function scheduleSaveStates() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(flushSaveStates, 350);
+        }
+
+        function flushSaveStates() {
+            try {
+                const payload = {};
+                sceneData.forEach(s => {
+                    if (s.bloomDone || s.recordedPts.length > 0) {
+                        payload[s.id] = {
+                            bloom: !!s.bloomDone,
+                            pts: s.recordedPts.slice(-360),
+                            pct: Math.round(s.revealProgress)
+                        };
+                    }
+                });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch { /* ignore storage quota errors */ }
+        }
+        window.addEventListener('pagehide', flushSaveStates);
 
         // ============================================
         // EASING HELPERS
@@ -1136,6 +1310,7 @@
         document.querySelectorAll('.transition-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
+                flushSaveStates();
                 const target = link.href;
                 introContent.style.opacity = '0';
                 overlay.classList.remove('curtain-open');
@@ -1155,10 +1330,24 @@
             smoothScrollTo(1);
         }
 
+        const CHAPTER_STOPS = [0, 0.24, 0.43, 0.62, 0.80, 1];
         chapterButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 smoothScrollTo(parseFloat(btn.dataset.target));
             });
+        });
+
+        // Keyboard chapter navigation (ArrowDown / ArrowUp / PageDown / PageUp)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+                e.preventDefault();
+                const cur = inContactMode ? 5 : activeSceneIndex;
+                smoothScrollTo(CHAPTER_STOPS[Math.min(CHAPTER_STOPS.length - 1, cur + 1)]);
+            } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                e.preventDefault();
+                const cur = inContactMode ? 5 : activeSceneIndex;
+                smoothScrollTo(CHAPTER_STOPS[Math.max(0, cur - 1)]);
+            }
         });
 
         // ============================================
@@ -1205,6 +1394,7 @@
         // ============================================
         // ARTWORK ASSETS, CACHED OFFSCREEN BUFFERS & PARTICLES
         // ============================================
+        const savedStates = loadSavedStates();
         const sceneData = SCENES.map(cfg => {
             const maskCanvas = document.createElement('canvas');
             const maskCtx = maskCanvas.getContext('2d');
@@ -1214,6 +1404,7 @@
             const scaledLineCtx = scaledLineCanvas.getContext('2d');
             const scaledColorCanvas = document.createElement('canvas');
             const scaledColorCtx = scaledColorCanvas.getContext('2d');
+            const saved = savedStates[cfg.id];
             return {
                 ...cfg,
                 colorImg: new Image(),
@@ -1230,9 +1421,14 @@
                 sh: 1,
                 maskDirty: true,
                 hasPaint: false,
-                revealProgress: 0,
+                revealProgress: saved ? (saved.pct || 0) : 0,
                 bloomActive: false,
-                bloomRadius: 0
+                bloomDone: !!(saved && saved.bloom),
+                bloomRadius: 0,
+                recordedPts: saved && Array.isArray(saved.pts) ? saved.pts : [],
+                lastRecX: -999,
+                lastRecY: -999,
+                restoredFromStorage: false
             };
         });
 
@@ -1339,6 +1535,34 @@
                 scene.maskCanvas.height = sh;
                 if (prevMask) {
                     scene.maskCtx.drawImage(prevMask, 0, 0, sw, sh);
+                }
+            }
+
+            // Restore saved paint state from previous session once on initial buffer setup
+            if (!scene.restoredFromStorage) {
+                scene.restoredFromStorage = true;
+                if (scene.bloomDone) {
+                    scene.maskCtx.fillStyle = '#ffffff';
+                    scene.maskCtx.fillRect(0, 0, sw, sh);
+                    scene.hasPaint = true;
+                    scene.revealProgress = 100;
+                } else if (scene.recordedPts.length > 0) {
+                    const r = BRUSH_RADIUS;
+                    const mCtx = scene.maskCtx;
+                    for (let i = 0; i < scene.recordedPts.length; i++) {
+                        const [nx, ny] = scene.recordedPts[i];
+                        const px = (nx / 1000) * sw;
+                        const py = (ny / 1000) * sh;
+                        const grad = mCtx.createRadialGradient(px, py, r * 0.15, px, py, r);
+                        grad.addColorStop(0, 'rgba(255, 255, 255, 0.24)');
+                        grad.addColorStop(0.55, 'rgba(255, 255, 255, 0.12)');
+                        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        mCtx.fillStyle = grad;
+                        mCtx.beginPath();
+                        mCtx.arc(px, py, r, 0, Math.PI * 2);
+                        mCtx.fill();
+                    }
+                    scene.hasPaint = true;
                 }
             }
 
@@ -1504,6 +1728,18 @@
             scene.hasPaint = true;
             scene.maskDirty = true;
             scene.revealProgress = Math.min(100, scene.revealProgress + 0.14);
+
+            // Sample normalized stroke points [0..1000] for Gallery compare & sharing
+            if (!scene.bloomDone && Math.hypot(paintX - scene.lastRecX, paintY - scene.lastRecY) >= 18) {
+                scene.lastRecX = paintX;
+                scene.lastRecY = paintY;
+                scene.recordedPts.push([
+                    Math.round(clamp(paintX / params.sw, 0, 1) * 1000),
+                    Math.round(clamp(paintY / params.sh, 0, 1) * 1000)
+                ]);
+                if (scene.recordedPts.length > 360) scene.recordedPts.shift();
+                scheduleSaveStates();
+            }
             return true;
         }
 
@@ -1563,17 +1799,24 @@
         document.getElementById('btn-bloom').addEventListener('click', () => {
             const scene = sceneData[activeSceneIndex];
             scene.bloomActive = true;
+            scene.bloomDone = true;
             scene.bloomRadius = 10;
             scene.hasPaint = true;
+            scheduleSaveStates();
         });
 
         document.getElementById('btn-reset').addEventListener('click', () => {
             const scene = sceneData[activeSceneIndex];
             scene.bloomActive = false;
+            scene.bloomDone = false;
             scene.hasPaint = false;
+            scene.recordedPts = [];
+            scene.lastRecX = -999;
+            scene.lastRecY = -999;
             scene.maskCtx.clearRect(0, 0, scene.maskCanvas.width, scene.maskCanvas.height);
             scene.revealProgress = 0;
             scene.maskDirty = true;
+            flushSaveStates();
         });
 
         // ============================================
@@ -1589,6 +1832,8 @@
                 activeSceneIndex = newIdx;
                 pointer.lastPaintX = null;
                 pointer.lastPaintY = null;
+                setAmbientGlow(activeSceneIndex);
+                playPaperRustle();
             }
 
             if (displayedPlacardIdx !== activeSceneIndex) {

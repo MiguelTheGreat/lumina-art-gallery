@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina. | Exhibition Gallery</title>
-    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse, Reverie, Amber, Sunshower, and Miyabi — with interactive line-art to color reveals and fullscreen comparison inspection.">
+    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse, Reverie, Amber, Sunshower, and Miyabi — with interactive line-art to color reveals, fullscreen comparison, and custom shareable cards.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
@@ -81,23 +81,10 @@
         .curtain-panel:nth-child(3) { left: 50%; transition-delay: 0.18s; }
         .curtain-panel:nth-child(4) { left: 75%; transition-delay: 0.25s; }
 
-        #intro-overlay.curtain-open {
-            pointer-events: none;
-        }
-
-        #intro-overlay.curtain-open .curtain-panel {
-            transform: scaleY(0);
-            transform-origin: top center;
-        }
-
-        #intro-overlay.curtain-closing {
-            pointer-events: all;
-        }
-
-        #intro-overlay.curtain-closing .curtain-panel {
-            transform: scaleY(1);
-            transform-origin: bottom center;
-        }
+        #intro-overlay.curtain-open { pointer-events: none; }
+        #intro-overlay.curtain-open .curtain-panel { transform: scaleY(0); transform-origin: top center; }
+        #intro-overlay.curtain-closing { pointer-events: all; }
+        #intro-overlay.curtain-closing .curtain-panel { transform: scaleY(1); transform-origin: bottom center; }
 
         .intro-content {
             position: relative;
@@ -148,7 +135,7 @@
             left: 0;
             pointer-events: none;
             border-radius: 50%;
-            z-index: 500;
+            z-index: 600;
             transform: translate(-50%, -50%);
             will-change: transform, width, height;
         }
@@ -186,12 +173,14 @@
         body.cursor-inspect #cursor-dot { opacity: 0; }
 
         body.cursor-link #cursor-ring {
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             border-color: var(--ink-primary);
             background: rgba(26, 25, 23, 0.06);
         }
 
+        body.modal-open #cursor-ring,
+        body.modal-open #cursor-dot,
         body.cursor-hidden #cursor-ring,
         body.cursor-hidden #cursor-dot { opacity: 0; }
 
@@ -324,7 +313,6 @@
         .gallery-strip:nth-child(5) { transition-delay: 0s, 0s, 0s, 0.33s; }
         .gallery-strip:last-child { border-right: none; }
 
-        /* When hovering any strip, gently recede siblings */
         .gallery-wrapper:hover .gallery-strip:not(:hover) {
             flex: 0.65;
             opacity: 0.58;
@@ -336,11 +324,10 @@
             opacity: 1 !important;
         }
 
-        /* Top-right ambient index watermark */
         .strip-watermark {
             position: absolute;
             top: 6.2rem;
-            right: 2rem;
+            right: 1.75rem;
             font-family: 'Syncopate', sans-serif;
             font-size: 0.65rem;
             letter-spacing: 0.28em;
@@ -355,7 +342,6 @@
             transform: translateY(-4px);
         }
 
-        /* Art stage with 3D parallax */
         .art-card {
             position: relative;
             width: 100%;
@@ -406,23 +392,22 @@
             transform: scale(1.05);
         }
 
-        /* Card Info with masked reveal */
         .card-info {
             position: absolute;
-            bottom: 3rem;
-            left: 2.4rem;
-            right: 2.4rem;
+            bottom: 2.75rem;
+            left: 1.75rem;
+            right: 1.75rem;
             z-index: 20;
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
+            gap: 0.25rem;
         }
 
         .card-index {
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.58rem;
-            letter-spacing: 0.25em;
+            font-size: 0.56rem;
+            letter-spacing: 0.24em;
             color: var(--accent-warm);
             opacity: 0.65;
             transition: opacity 0.4s ease, transform 0.6s var(--ease-expo);
@@ -430,20 +415,20 @@
 
         .card-title {
             font-family: 'Syncopate', sans-serif;
-            font-size: clamp(1rem, 1.8vw, 1.35rem);
+            font-size: clamp(0.88rem, 1.5vw, 1.25rem);
             font-weight: 700;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--ink-primary);
             margin: 0;
-            opacity: 0.55;
+            opacity: 0.58;
             transition: opacity 0.5s ease, transform 0.65s var(--ease-expo), letter-spacing 0.65s var(--ease-expo);
         }
 
         .card-meta {
             font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: 1rem;
+            font-size: 0.98rem;
             color: var(--ink-secondary);
             margin: 0;
             opacity: 0;
@@ -452,10 +437,10 @@
         }
 
         .card-cta {
-            margin-top: 0.5rem;
+            margin-top: 0.4rem;
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.56rem;
-            letter-spacing: 0.24em;
+            font-size: 0.54rem;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
             color: var(--ink-primary);
             opacity: 0;
@@ -464,12 +449,12 @@
         }
 
         .gallery-strip:hover .card-index { opacity: 1; transform: translateX(6px); }
-        .gallery-strip:hover .card-title { opacity: 1; transform: translateX(6px); letter-spacing: 0.22em; }
+        .gallery-strip:hover .card-title { opacity: 1; transform: translateX(6px); letter-spacing: 0.2em; }
         .gallery-strip:hover .card-meta { opacity: 1; transform: translateY(0) translateX(6px); }
         .gallery-strip:hover .card-cta { opacity: 0.85; transform: translateY(0) translateX(6px); }
 
         /* ============================================
-           INTERACTIVE FULLSCREEN LIGHTBOX + COMPARE SLIDER
+           INTERACTIVE FULLSCREEN LIGHTBOX + COMPARE MODE SWITCHER
            ============================================ */
         #lightbox {
             position: fixed;
@@ -479,7 +464,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(20, 19, 17, 0.92);
+            background: rgba(18, 17, 15, 0.94);
             backdrop-filter: blur(18px);
             opacity: 0;
             pointer-events: none;
@@ -500,10 +485,12 @@
             top: 0;
             left: 0;
             right: 0;
-            padding: 1.75rem clamp(1.25rem, 4vw, 3rem);
+            padding: 1.4rem clamp(1rem, 3.5vw, 2.75rem);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
             color: var(--bg-paper);
             z-index: 10;
         }
@@ -511,49 +498,115 @@
         .lb-title-group {
             display: flex;
             align-items: baseline;
-            gap: 1rem;
+            gap: 0.9rem;
         }
 
         .lb-index {
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             letter-spacing: 0.24em;
             color: var(--accent-warm);
         }
 
         .lb-title {
             font-family: 'Syncopate', sans-serif;
-            font-size: clamp(0.95rem, 2vw, 1.35rem);
+            font-size: clamp(0.9rem, 1.9vw, 1.3rem);
             letter-spacing: 0.2em;
             text-transform: uppercase;
             margin: 0;
         }
 
-        .lb-close {
+        .lb-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        /* Compare Mode Segmented Toggle */
+        .compare-toggle {
+            display: inline-flex;
+            background: rgba(245, 242, 233, 0.08);
+            border: 1px solid rgba(245, 242, 233, 0.18);
+            border-radius: 999px;
+            padding: 3px;
+        }
+
+        .compare-mode-btn {
+            background: transparent;
+            border: none;
+            color: rgba(245, 242, 233, 0.65);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.56rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            padding: 0.48rem 0.9rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .compare-mode-btn.active {
+            background: var(--bg-paper);
+            color: var(--ink-primary);
+        }
+
+        .lb-btn {
             background: none;
-            border: 1px solid rgba(245, 242, 233, 0.25);
+            border: 1px solid rgba(245, 242, 233, 0.26);
             color: var(--bg-paper);
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.62rem;
-            letter-spacing: 0.2em;
+            font-size: 0.58rem;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            padding: 0.6rem 1.2rem;
+            padding: 0.55rem 1.05rem;
             border-radius: 999px;
             cursor: pointer;
             transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s var(--ease-expo);
         }
 
-        .lb-close:hover {
+        .lb-btn:hover {
             background: var(--bg-paper);
             color: var(--ink-primary);
-            transform: scale(1.04);
+            transform: scale(1.03);
         }
 
-        /* Compare Stage */
+        .lb-btn-accent {
+            border-color: var(--accent-warm);
+            color: #f3dec4;
+        }
+
+        .lb-btn-accent:hover {
+            background: var(--accent-warm);
+            color: #161513;
+        }
+
+        .compare-status-pill {
+            position: absolute;
+            top: 4.8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 0.92rem;
+            letter-spacing: 0.06em;
+            color: rgba(245, 242, 233, 0.72);
+            background: rgba(245, 242, 233, 0.07);
+            border: 1px solid rgba(245, 242, 233, 0.12);
+            padding: 0.3rem 0.9rem;
+            border-radius: 999px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+            z-index: 12;
+        }
+
+        .compare-status-pill.is-visible { opacity: 1; }
+
         .compare-stage {
             position: relative;
             width: min(86vw, 1080px);
-            height: 70vh;
+            height: 68vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -579,7 +632,7 @@
         }
 
         .compare-frame img {
-            max-height: 70vh;
+            max-height: 68vh;
             max-width: 82vw;
             width: auto;
             height: auto;
@@ -588,9 +641,7 @@
             border-radius: 2px;
         }
 
-        .compare-line {
-            filter: grayscale(100%) contrast(1.08);
-        }
+        .compare-line { filter: grayscale(100%) contrast(1.08); }
 
         .compare-color {
             position: absolute;
@@ -637,7 +688,7 @@
 
         .lightbox-footer {
             position: absolute;
-            bottom: 1.75rem;
+            bottom: 1.5rem;
             left: 0;
             right: 0;
             padding: 0 clamp(1.25rem, 4vw, 3rem);
@@ -647,37 +698,329 @@
             color: rgba(245, 242, 233, 0.65);
         }
 
-        .lb-nav-btn {
-            background: none;
-            border: 1px solid rgba(245, 242, 233, 0.2);
-            color: var(--bg-paper);
-            font-family: 'Syncopate', sans-serif;
-            font-size: 0.62rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            padding: 0.65rem 1.25rem;
-            border-radius: 999px;
-            cursor: pointer;
-            transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s var(--ease-expo);
-        }
-
-        .lb-nav-btn:hover {
-            background: var(--bg-paper);
-            color: var(--ink-primary);
-            transform: translateY(-2px);
-        }
-
         .lb-caption {
             font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: 1.05rem;
+            font-size: 1.02rem;
             letter-spacing: 0.08em;
             text-align: center;
         }
 
         /* ============================================
+           SHARE STUDIO MODAL (Multiple Design Cards + Soundtrack)
+           ============================================ */
+        #share-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 320;
+            background: rgba(14, 13, 12, 0.84);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.25rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s var(--ease-expo);
+        }
+
+        #share-modal.is-open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .share-panel {
+            background: #1c1a17;
+            color: var(--bg-paper);
+            border: 1px solid rgba(245, 242, 233, 0.14);
+            border-radius: 8px;
+            width: min(960px, 95vw);
+            max-height: 90vh;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            gap: 1.75rem;
+            padding: clamp(1.25rem, 3vw, 2rem);
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.55s var(--ease-expo);
+        }
+
+        #share-modal.is-open .share-panel {
+            transform: translateY(0) scale(1);
+        }
+
+        .share-preview-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.9rem;
+            background: rgba(0, 0, 0, 0.28);
+            border-radius: 6px;
+            padding: 1.25rem;
+            border: 1px solid rgba(245, 242, 233, 0.07);
+        }
+
+        #share-preview-canvas {
+            max-width: 100%;
+            max-height: 52vh;
+            width: auto;
+            height: auto;
+            border-radius: 3px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48);
+        }
+
+        .share-music-preview {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .share-music-preview.has-track { display: block; }
+
+        .share-controls-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .share-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(245, 242, 233, 0.1);
+            padding-bottom: 0.85rem;
+        }
+
+        .share-head h3 {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .field-label {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.56rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(245, 242, 233, 0.6);
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .opt-pill {
+            background: rgba(245, 242, 233, 0.06);
+            border: 1px solid rgba(245, 242, 233, 0.16);
+            color: rgba(245, 242, 233, 0.78);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.56rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 0.5rem 0.85rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+        }
+
+        .opt-pill:hover { border-color: rgba(245, 242, 233, 0.45); }
+
+        .opt-pill.active {
+            background: var(--bg-paper);
+            color: var(--ink-primary);
+            border-color: var(--bg-paper);
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(245, 242, 233, 0.05);
+            border: 1px solid rgba(245, 242, 233, 0.1);
+            border-radius: 6px;
+            padding: 0.7rem 0.95rem;
+            cursor: pointer;
+        }
+
+        .toggle-row span {
+            font-size: 0.82rem;
+            color: rgba(245, 242, 233, 0.88);
+        }
+
+        .toggle-switch {
+            width: 38px;
+            height: 20px;
+            border-radius: 999px;
+            background: rgba(245, 242, 233, 0.22);
+            position: relative;
+            transition: background-color 0.25s ease;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-paper);
+            transition: transform 0.3s var(--ease-expo);
+        }
+
+        .toggle-row input { display: none; }
+        .toggle-row input:checked + .toggle-switch { background: var(--accent-warm); }
+        .toggle-row input:checked + .toggle-switch::after { transform: translateX(18px); }
+
+        .music-input {
+            width: 100%;
+            background: rgba(245, 242, 233, 0.06);
+            border: 1px solid rgba(245, 242, 233, 0.18);
+            border-radius: 6px;
+            padding: 0.68rem 0.85rem;
+            color: var(--bg-paper);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.25s ease;
+        }
+
+        .music-input:focus { border-color: var(--accent-warm); }
+        .music-input::placeholder { color: rgba(245, 242, 233, 0.36); }
+
+        .music-status {
+            font-size: 0.74rem;
+            color: rgba(245, 242, 233, 0.56);
+            min-height: 1.1em;
+        }
+
+        .music-status.valid { color: #9ed2a4; }
+        .music-status.invalid { color: #e29b8e; }
+
+        .share-actions {
+            display: flex;
+            gap: 0.65rem;
+            margin-top: 0.35rem;
+        }
+
+        .action-primary {
+            flex: 1;
+            background: var(--bg-paper);
+            color: var(--ink-primary);
+            border: 1px solid var(--bg-paper);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            padding: 0.82rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.3s var(--ease-expo), background-color 0.25s ease;
+        }
+
+        .action-primary:hover { transform: translateY(-2px); background: #ffffff; }
+
+        .action-secondary {
+            background: transparent;
+            color: var(--bg-paper);
+            border: 1px solid rgba(245, 242, 233, 0.28);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            padding: 0.82rem 1.1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.3s var(--ease-expo), background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .action-secondary:hover {
+            background: rgba(245, 242, 233, 0.12);
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+           SHARED LINK SHOWCASE VIEW (When opening a shared URL)
+           ============================================ */
+        #shared-showcase {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: #141311;
+            color: var(--bg-paper);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.15rem;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        #shared-showcase.is-open { display: flex; }
+
+        .showcase-glow {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .showcase-inner {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            max-width: 92vw;
+        }
+
+        #showcase-canvas {
+            max-height: 62vh;
+            max-width: 88vw;
+            width: auto;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
+        }
+
+        #showcase-player {
+            width: min(420px, 88vw);
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        #showcase-player.has-track { display: block; }
+
+        .showcase-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* ============================================
            MOBILE / PORTRAIT
            ============================================ */
+        @media (max-width: 860px) {
+            .share-panel { grid-template-columns: 1fr; }
+        }
+
         @media (max-width: 768px) or (orientation: portrait) {
             .nav-hint { display: none; }
             .gallery-wrapper { flex-direction: column; }
@@ -686,10 +1029,10 @@
                 border-right: none;
                 border-bottom: 1px solid var(--border-subtle);
             }
-            .gallery-strip:hover { flex: 1.8; }
-            .card-info { bottom: 1.4rem; left: 1.5rem; }
+            .gallery-strip:hover { flex: 2.2; }
+            .card-info { bottom: 1.2rem; left: 1.4rem; }
             .art-card { height: 68%; }
-            .strip-watermark { top: 1.2rem; right: 1.5rem; }
+            .strip-watermark { top: 1rem; right: 1.4rem; }
             .lb-caption { display: none; }
         }
 
@@ -726,7 +1069,7 @@
     <nav class="nav" aria-label="Gallery Navigation">
         <a href="AdrianArtReimagined.html" class="brand transition-link link-target">Lumina.</a>
         <div class="nav-right">
-            <span class="nav-hint">Hover to unveil · Click to compare</span>
+            <span class="nav-hint">Hover to unveil · Click to compare &amp; share</span>
             <a href="AdrianArtReimagined.html" class="menu-item transition-link link-target">Back to Experience</a>
         </div>
     </nav>
@@ -803,20 +1146,30 @@
         </article>
     </main>
 
-    <!-- Fullscreen Lightbox with Interactive Sketch-to-Color Wipe Slider -->
+    <!-- Fullscreen Lightbox with Compare Mode Switcher & Share Studio trigger -->
     <div id="lightbox" role="dialog" aria-modal="true" aria-label="Artwork Inspection">
         <div class="lightbox-header">
             <div class="lb-title-group">
                 <span class="lb-index" id="lb-index">01 / 05</span>
                 <h2 class="lb-title" id="lb-title">Glimpse</h2>
             </div>
-            <button class="lb-close link-target" id="lb-close">Close [ESC]</button>
+
+            <div class="lb-controls">
+                <div class="compare-toggle" role="group" aria-label="Compare Mode">
+                    <button class="compare-mode-btn active" id="mode-full" data-mode="full">Full Color</button>
+                    <button class="compare-mode-btn" id="mode-recorded" data-mode="recorded">Experience State</button>
+                </div>
+                <button class="lb-btn lb-btn-accent" id="lb-share">Share Card</button>
+                <button class="lb-btn" id="lb-close">Close [ESC]</button>
+            </div>
         </div>
+
+        <div class="compare-status-pill" id="compare-status-pill"></div>
 
         <div class="compare-stage" id="compare-stage">
             <div class="compare-frame" id="compare-frame">
                 <img id="lb-line" class="compare-line" src="assets/glimpse_line.webp" alt="Line art version" decoding="async">
-                <img id="lb-color" class="compare-color" src="assets/glimpse.webp" alt="Colored version" decoding="async">
+                <img id="lb-color" class="compare-color" src="assets/glimpse.webp" alt="Comparison version" decoding="async">
                 <div class="compare-divider" id="compare-divider">
                     <div class="compare-handle">◀ ▶</div>
                 </div>
@@ -824,48 +1177,132 @@
         </div>
 
         <div class="lightbox-footer">
-            <button class="lb-nav-btn link-target" id="lb-prev">← Prev</button>
+            <button class="lb-btn" id="lb-prev">← Prev</button>
             <div class="lb-caption" id="lb-caption">Drag across the canvas to compare Line Art &amp; Full Color</div>
-            <button class="lb-nav-btn link-target" id="lb-next">Next →</button>
+            <button class="lb-btn" id="lb-next">Next →</button>
+        </div>
+    </div>
+
+    <!-- Share Studio Modal -->
+    <div id="share-modal" role="dialog" aria-modal="true" aria-label="Share Artwork Card">
+        <div class="share-panel">
+            <div class="share-preview-col">
+                <canvas id="share-preview-canvas"></canvas>
+                <div class="share-music-preview" id="share-music-preview"></div>
+            </div>
+
+            <div class="share-controls-col">
+                <div class="share-head">
+                    <h3>Share Card Studio</h3>
+                    <button class="lb-btn" id="share-close">Close</button>
+                </div>
+
+                <div class="field-group">
+                    <span class="field-label">Artwork Version</span>
+                    <div class="pill-row" id="variant-pills">
+                        <button class="opt-pill active" data-variant="color">Full Color</button>
+                        <button class="opt-pill" data-variant="line">Line Art</button>
+                        <button class="opt-pill" data-variant="canvas">Experience State</button>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <span class="field-label">Design Card Style</span>
+                    <div class="pill-row" id="card-pills">
+                        <button class="opt-pill active" data-card="museum">Museum</button>
+                        <button class="opt-pill" data-card="noir">Noir</button>
+                        <button class="opt-pill" data-card="polaroid">Polaroid</button>
+                        <button class="opt-pill" data-card="minimal">Minimal</button>
+                    </div>
+                </div>
+
+                <label class="toggle-row">
+                    <span>Include Title &amp; Caption</span>
+                    <input type="checkbox" id="share-title-toggle" checked>
+                    <div class="toggle-switch"></div>
+                </label>
+
+                <div class="field-group">
+                    <label class="field-label" for="share-music-input">Soundtrack Link (Spotify or YouTube Music)</label>
+                    <input
+                        type="url"
+                        id="share-music-input"
+                        class="music-input"
+                        placeholder="Paste a Spotify or YouTube Music URL (optional)"
+                        autocomplete="off"
+                    >
+                    <div class="music-status" id="share-music-status">Optional — plays as an embedded soundtrack when opened</div>
+                </div>
+
+                <div class="share-actions">
+                    <button class="action-primary" id="btn-copy-link">Copy Share Link</button>
+                    <button class="action-secondary" id="btn-download-card">Download PNG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared Link Showcase View (auto-opens when visiting a shared URL) -->
+    <div id="shared-showcase" aria-label="Shared Artwork Card">
+        <div class="showcase-glow" id="showcase-glow"></div>
+        <div class="showcase-inner">
+            <canvas id="showcase-canvas"></canvas>
+            <div id="showcase-player"></div>
+            <div class="showcase-actions">
+                <button class="action-primary" id="showcase-explore" style="flex: none; padding: 0.78rem 1.5rem;">Explore Full Gallery</button>
+                <button class="action-secondary" id="showcase-download">Download Card</button>
+                <a href="AdrianArtReimagined.html" class="action-secondary transition-link" style="text-decoration: none;">Paint in Experience Mode</a>
+            </div>
         </div>
     </div>
 
     <script>
+        const STORAGE_KEY = 'lumina_canvas_state_v1';
         const ARTWORKS = [
             {
+                id: 'glimpse',
                 index: '01 / 05',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
                 line: 'assets/glimpse_line.webp',
-                color: 'assets/glimpse.webp'
+                color: 'assets/glimpse.webp',
+                glow: 'radial-gradient(circle at 50% 45%, rgba(198, 152, 126, 0.32), transparent 72%)'
             },
             {
+                id: 'reverie',
                 index: '02 / 05',
                 title: 'Reverie',
                 subtitle: 'Sunlit Portrait in Lavender & Ink',
                 line: 'assets/reverie_line.webp',
-                color: 'assets/reverie.webp'
+                color: 'assets/reverie.webp',
+                glow: 'radial-gradient(circle at 50% 45%, rgba(154, 128, 206, 0.34), transparent 72%)'
             },
             {
+                id: 'amber',
                 index: '03 / 05',
                 title: 'Amber',
                 subtitle: 'Golden Hour Silhouette & Texture',
                 line: 'assets/amber_line.webp',
-                color: 'assets/amber.webp'
+                color: 'assets/amber.webp',
+                glow: 'radial-gradient(circle at 50% 45%, rgba(236, 170, 68, 0.34), transparent 72%)'
             },
             {
+                id: 'sunshower',
                 index: '04 / 05',
                 title: 'Sunshower',
                 subtitle: 'Motion, Breeze & After-Rain Light',
                 line: 'assets/sunshower_line.webp',
-                color: 'assets/sunshower.webp'
+                color: 'assets/sunshower.webp',
+                glow: 'radial-gradient(circle at 50% 45%, rgba(118, 174, 224, 0.34), transparent 72%)'
             },
             {
+                id: 'miyabi',
                 index: '05 / 05',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
                 line: 'assets/miyabi_line.webp',
-                color: 'assets/miyabi.webp'
+                color: 'assets/miyabi.webp',
+                glow: 'radial-gradient(circle at 50% 45%, rgba(124, 148, 182, 0.32), transparent 72%)'
             }
         ];
 
@@ -877,6 +1314,392 @@
         const strips = document.querySelectorAll('.gallery-strip');
 
         // ============================================
+        // AUTOMATIC WEB AUDIO PAPER RUSTLE (No Opt-In)
+        // ============================================
+        let audioCtx = null;
+        let noiseBuffer = null;
+
+        function ensureAudio() {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return null;
+            if (!audioCtx) {
+                audioCtx = new Ctx();
+                const len = Math.floor(audioCtx.sampleRate * 0.55);
+                noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                let b0 = 0, b1 = 0, b2 = 0;
+                for (let i = 0; i < len; i++) {
+                    const white = Math.random() * 2 - 1;
+                    b0 = 0.997 * b0 + white * 0.029;
+                    b1 = 0.985 * b1 + white * 0.032;
+                    b2 = 0.950 * b2 + white * 0.048;
+                    data[i] = (b0 + b1 + b2 + white * 0.18) * 1.4;
+                }
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+            return audioCtx;
+        }
+
+        ['pointerdown', 'wheel', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+            window.addEventListener(evt, () => ensureAudio(), { once: true, passive: true });
+        });
+        ensureAudio();
+
+        function playPaperRustle() {
+            const ac = ensureAudio();
+            if (!ac || !noiseBuffer || ac.state !== 'running') return;
+            const t = ac.currentTime;
+            const src = ac.createBufferSource();
+            src.buffer = noiseBuffer;
+            const bp = ac.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.setValueAtTime(1200, t);
+            bp.frequency.exponentialRampToValueAtTime(2300, t + 0.12);
+            bp.frequency.exponentialRampToValueAtTime(950, t + 0.36);
+            bp.Q.value = 1.1;
+            const gain = ac.createGain();
+            gain.gain.setValueAtTime(0.0001, t);
+            gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.40);
+            src.connect(bp);
+            bp.connect(gain);
+            gain.connect(ac.destination);
+            src.start(t);
+            src.stop(t + 0.42);
+        }
+
+        // ============================================
+        // IMAGE LOADER CACHE & EXPERIENCE STATE RECONSTRUCTION
+        // ============================================
+        const imageCache = new Map();
+        function loadImage(src) {
+            if (imageCache.has(src)) return imageCache.get(src);
+            const promise = new Promise((resolve, reject) => {
+                const img = new Image();
+                img.decoding = 'async';
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+            imageCache.set(src, promise);
+            return promise;
+        }
+
+        function getSavedExperienceStates() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        // Encode/decode compact stroke state for cross-device share URLs
+        function encodeStrokeState(state) {
+            if (!state) return '';
+            if (state.bloom) return 'B';
+            if (!state.pts || state.pts.length === 0) return '';
+            // Cap at ~160 sampled points to keep URLs compact
+            const pts = state.pts;
+            const step = Math.max(1, Math.ceil(pts.length / 160));
+            const out = [];
+            for (let i = 0; i < pts.length; i += step) {
+                const x = Math.max(0, Math.min(999, Math.round(pts[i][0])));
+                const y = Math.max(0, Math.min(999, Math.round(pts[i][1])));
+                out.push(x.toString(36).padStart(2, '0') + y.toString(36).padStart(2, '0'));
+            }
+            return 'P' + out.join('');
+        }
+
+        function decodeStrokeState(code) {
+            if (!code) return null;
+            if (code === 'B') return { bloom: true, pts: [], pct: 100 };
+            if (!code.startsWith('P')) return null;
+            const raw = code.slice(1);
+            const pts = [];
+            for (let i = 0; i + 3 < raw.length; i += 4) {
+                const x = parseInt(raw.slice(i, i + 2), 36);
+                const y = parseInt(raw.slice(i + 2, i + 4), 36);
+                if (!Number.isNaN(x) && !Number.isNaN(y)) pts.push([x, y]);
+            }
+            return { bloom: false, pts, pct: Math.min(100, Math.round(pts.length * 0.6)) };
+        }
+
+        // Render an artwork in 'color', 'line', or 'canvas' (recorded Experience state) onto an offscreen canvas
+        async function renderArtworkVariant(art, variant, overrideState = null) {
+            const [lineImg, colorImg] = await Promise.all([loadImage(art.line), loadImage(art.color)]);
+            const w = colorImg.naturalWidth || 1000;
+            const h = colorImg.naturalHeight || 1000;
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            const g = c.getContext('2d');
+
+            if (variant === 'color') {
+                g.drawImage(colorImg, 0, 0, w, h);
+                return { canvas: c, hasPaint: true };
+            }
+
+            // Draw monochrome line base
+            g.save();
+            g.filter = 'grayscale(100%) contrast(1.08)';
+            g.drawImage(lineImg, 0, 0, w, h);
+            g.restore();
+
+            if (variant === 'line') {
+                return { canvas: c, hasPaint: false };
+            }
+
+            // Variant === 'canvas' (recorded Experience Mode state)
+            const state = overrideState || getSavedExperienceStates()[art.id];
+            if (!state) {
+                return { canvas: c, hasPaint: false };
+            }
+            if (state.bloom) {
+                g.drawImage(colorImg, 0, 0, w, h);
+                return { canvas: c, hasPaint: true };
+            }
+            if (!state.pts || state.pts.length === 0) {
+                return { canvas: c, hasPaint: false };
+            }
+
+            const mask = document.createElement('canvas');
+            mask.width = w;
+            mask.height = h;
+            const mCtx = mask.getContext('2d');
+            const r = Math.min(w, h) * 0.088;
+
+            for (let i = 0; i < state.pts.length; i++) {
+                const px = (state.pts[i][0] / 1000) * w;
+                const py = (state.pts[i][1] / 1000) * h;
+                const grad = mCtx.createRadialGradient(px, py, r * 0.15, px, py, r);
+                grad.addColorStop(0, 'rgba(255,255,255,0.28)');
+                grad.addColorStop(0.55, 'rgba(255,255,255,0.14)');
+                grad.addColorStop(1, 'rgba(255,255,255,0)');
+                mCtx.fillStyle = grad;
+                mCtx.beginPath();
+                mCtx.arc(px, py, r, 0, Math.PI * 2);
+                mCtx.fill();
+            }
+
+            const comp = document.createElement('canvas');
+            comp.width = w;
+            comp.height = h;
+            const compCtx = comp.getContext('2d');
+            compCtx.drawImage(mask, 0, 0);
+            compCtx.globalCompositeOperation = 'source-in';
+            compCtx.drawImage(colorImg, 0, 0, w, h);
+            g.drawImage(comp, 0, 0);
+
+            return { canvas: c, hasPaint: true };
+        }
+
+        // ============================================
+        // DESIGN CARD RENDERER (Museum / Noir / Polaroid / Minimal)
+        // ============================================
+        async function renderDesignCard(targetCanvas, art, { variant, cardStyle, showTitle, overrideState = null }) {
+            const { canvas: artCanvas } = await renderArtworkVariant(art, variant, overrideState);
+            const aw = artCanvas.width;
+            const ah = artCanvas.height;
+
+            // Scale artwork to fit nicely inside a crisp 1080px-class export card
+            const maxArtW = 860;
+            const maxArtH = 860;
+            const scale = Math.min(maxArtW / aw, maxArtH / ah);
+            const drawW = Math.round(aw * scale);
+            const drawH = Math.round(ah * scale);
+
+            let padTop = 76, padSide = 76, padBottom = showTitle ? 168 : 76;
+            let bg = '#f5f2e9';
+            let fg = '#1a1917';
+            let muted = '#6b655c';
+            let accent = '#a67c52';
+            let frameStroke = 'rgba(26, 25, 23, 0.12)';
+
+            if (cardStyle === 'noir') {
+                bg = '#161513';
+                fg = '#f5f2e9';
+                muted = 'rgba(245, 242, 233, 0.62)';
+                frameStroke = 'rgba(245, 242, 233, 0.14)';
+            } else if (cardStyle === 'polaroid') {
+                bg = '#fcfbf8';
+                fg = '#1a1917';
+                muted = '#7a746a';
+                padTop = 52;
+                padSide = 52;
+                padBottom = showTitle ? 190 : 120;
+                frameStroke = 'rgba(26, 25, 23, 0.08)';
+            } else if (cardStyle === 'minimal') {
+                padTop = 0;
+                padSide = 0;
+                padBottom = 0;
+                bg = '#141311';
+            }
+
+            const cw = drawW + padSide * 2;
+            const ch = drawH + padTop + padBottom;
+            targetCanvas.width = cw;
+            targetCanvas.height = ch;
+            const g = targetCanvas.getContext('2d');
+
+            // Background
+            g.fillStyle = bg;
+            g.fillRect(0, 0, cw, ch);
+
+            if (cardStyle === 'museum' || cardStyle === 'noir') {
+                // Subtle outer hairline border
+                g.strokeStyle = frameStroke;
+                g.lineWidth = 1.5;
+                g.strokeRect(24, 24, cw - 48, ch - 48);
+
+                // Top exhibition header
+                g.fillStyle = muted;
+                g.font = '600 13px "Syncopate", sans-serif';
+                g.textAlign = 'left';
+                g.fillText('LUMINA. GALLERY', padSide, 50);
+                g.textAlign = 'right';
+                g.fillStyle = accent;
+                g.fillText(art.index, cw - padSide, 50);
+            }
+
+            // Artwork image
+            g.drawImage(artCanvas, padSide, padTop, drawW, drawH);
+
+            if (cardStyle === 'polaroid') {
+                g.strokeStyle = 'rgba(0,0,0,0.08)';
+                g.lineWidth = 1;
+                g.strokeRect(padSide, padTop, drawW, drawH);
+            }
+
+            // Title & caption rendering
+            if (showTitle) {
+                if (cardStyle === 'minimal') {
+                    // Subtle bottom vignette + floating title
+                    const grad = g.createLinearGradient(0, ch - 180, 0, ch);
+                    grad.addColorStop(0, 'rgba(16, 15, 13, 0)');
+                    grad.addColorStop(1, 'rgba(16, 15, 13, 0.78)');
+                    g.fillStyle = grad;
+                    g.fillRect(0, ch - 180, cw, 180);
+
+                    g.textAlign = 'left';
+                    g.fillStyle = '#f5f2e9';
+                    g.font = '700 28px "Syncopate", sans-serif';
+                    g.fillText(art.title.toUpperCase(), 38, ch - 62);
+                    g.fillStyle = 'rgba(245, 242, 233, 0.78)';
+                    g.font = 'italic 22px "Cormorant Garamond", serif';
+                    g.fillText(`${art.subtitle}  ·  Lumina.`, 38, ch - 30);
+                } else if (cardStyle === 'polaroid') {
+                    g.textAlign = 'center';
+                    g.fillStyle = fg;
+                    g.font = 'italic 600 34px "Cormorant Garamond", serif';
+                    g.fillText(art.title, cw / 2, padTop + drawH + 86);
+                    g.fillStyle = muted;
+                    g.font = '400 13px "Syncopate", sans-serif';
+                    g.fillText('LUMINA.  ·  @AGIIZART', cw / 2, padTop + drawH + 124);
+                } else {
+                    // Museum & Noir editorial placard footer
+                    const baseY = padTop + drawH + 62;
+                    g.textAlign = 'left';
+                    g.fillStyle = fg;
+                    g.font = '700 28px "Syncopate", sans-serif';
+                    g.fillText(art.title.toUpperCase(), padSide, baseY);
+
+                    g.fillStyle = muted;
+                    g.font = 'italic 22px "Cormorant Garamond", serif';
+                    g.fillText(art.subtitle, padSide, baseY + 34);
+
+                    // Variant tag on right
+                    const badgeLabel = variant === 'color' ? 'FULL COLOR' : variant === 'line' ? 'LINE ART' : 'EXPERIENCE STATE';
+                    g.textAlign = 'right';
+                    g.fillStyle = accent;
+                    g.font = '700 12px "Syncopate", sans-serif';
+                    g.fillText(badgeLabel, cw - padSide, baseY - 2);
+                    g.fillStyle = muted;
+                    g.font = '400 13px "Inter", sans-serif';
+                    g.fillText('@agiizart', cw - padSide, baseY + 26);
+                }
+            }
+        }
+
+        // ============================================
+        // SPOTIFY & YOUTUBE MUSIC URL PARSER
+        // ============================================
+        function parseMusicUrl(raw) {
+            const val = (raw || '').trim();
+            if (!val) return null;
+
+            // Already encoded form from query param: sp:track:ID or yt:VIDEO_ID
+            const spCode = val.match(/^sp:(track|album|playlist):([A-Za-z0-9]+)$/);
+            if (spCode) {
+                return {
+                    provider: 'spotify',
+                    code: val,
+                    label: `Spotify ${spCode[1]}`,
+                    embedUrl: `https://open.spotify.com/embed/${spCode[1]}/${spCode[2]}?utm_source=generator&theme=0`,
+                    height: spCode[1] === 'track' ? 80 : 152
+                };
+            }
+            const ytCode = val.match(/^yt:([A-Za-z0-9_-]{11})$/);
+            if (ytCode) {
+                return {
+                    provider: 'youtube',
+                    code: val,
+                    label: 'YouTube Music',
+                    embedUrl: `https://www.youtube.com/embed/${ytCode[1]}?rel=0`,
+                    height: 152
+                };
+            }
+
+            // Full Spotify URL
+            const spUrl = val.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist)\/([A-Za-z0-9]+)/i);
+            if (spUrl) {
+                const kind = spUrl[1].toLowerCase();
+                const id = spUrl[2];
+                return {
+                    provider: 'spotify',
+                    code: `sp:${kind}:${id}`,
+                    label: `Spotify ${kind}`,
+                    embedUrl: `https://open.spotify.com/embed/${kind}/${id}?utm_source=generator&theme=0`,
+                    height: kind === 'track' ? 80 : 152
+                };
+            }
+
+            // Full YouTube / YouTube Music URL
+            const ytUrl = val.match(/(?:music\.youtube\.com|youtube\.com|youtu\.be)\/(?:watch\?v=|shorts\/|embed\/)?([A-Za-z0-9_-]{11})/i)
+                || val.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+            if (ytUrl) {
+                const id = ytUrl[1];
+                return {
+                    provider: 'youtube',
+                    code: `yt:${id}`,
+                    label: 'YouTube Music',
+                    embedUrl: `https://www.youtube.com/embed/${id}?rel=0`,
+                    height: 152
+                };
+            }
+
+            return { invalid: true };
+        }
+
+        function mountMusicEmbed(container, parsed) {
+            container.innerHTML = '';
+            if (!parsed || parsed.invalid) {
+                container.classList.remove('has-track');
+                return;
+            }
+            const iframe = document.createElement('iframe');
+            iframe.src = parsed.embedUrl;
+            iframe.width = '100%';
+            iframe.height = String(parsed.height);
+            iframe.frameBorder = '0';
+            iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+            iframe.loading = 'lazy';
+            iframe.style.display = 'block';
+            iframe.style.borderRadius = '8px';
+            container.appendChild(iframe);
+            container.classList.add('has-track');
+        }
+
+        // ============================================
         // SPLIT-CURTAIN INTRO & EXIT TRANSITIONS
         // ============================================
         function openCurtain() {
@@ -885,7 +1708,7 @@
         }
 
         window.addEventListener('load', () => {
-            setTimeout(openCurtain, 950);
+            setTimeout(openCurtain, 900);
         });
 
         window.addEventListener('pageshow', (e) => {
@@ -907,7 +1730,7 @@
         });
 
         // ============================================
-        // ON-DEMAND MAGNETIC CURSOR TRACKING (0% Idle CPU)
+        // ON-DEMAND MAGNETIC CURSOR TRACKING
         // ============================================
         const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2, rx: window.innerWidth / 2, ry: window.innerHeight / 2 };
         let cursorRaf = null;
@@ -1000,7 +1823,7 @@
         });
 
         // ============================================
-        // LIGHTBOX & GPU-COMPOSITED COMPARE SLIDER
+        // LIGHTBOX & COMPARE MODE (Full Color vs Experience State)
         // ============================================
         const lightbox = document.getElementById('lightbox');
         const compareStage = document.getElementById('compare-stage');
@@ -1009,9 +1832,14 @@
         const lbTitle = document.getElementById('lb-title');
         const lbLine = document.getElementById('lb-line');
         const lbColor = document.getElementById('lb-color');
+        const lbCaption = document.getElementById('lb-caption');
         const compareDivider = document.getElementById('compare-divider');
+        const compareStatusPill = document.getElementById('compare-status-pill');
+        const modeFullBtn = document.getElementById('mode-full');
+        const modeRecBtn = document.getElementById('mode-recorded');
 
         let currentLightboxIdx = 0;
+        let compareMode = 'full'; // 'full' | 'recorded'
         let isDraggingSlider = false;
         let compareRect = null;
 
@@ -1023,6 +1851,39 @@
             compareDivider.style.transform = `translate3d(${clamped * frameWidth}px, 0, 0)`;
         }
 
+        async function applyCompareSource() {
+            const art = ARTWORKS[currentLightboxIdx];
+            modeFullBtn.classList.toggle('active', compareMode === 'full');
+            modeRecBtn.classList.toggle('active', compareMode === 'recorded');
+
+            if (compareMode === 'full') {
+                lbColor.src = art.color;
+                lbCaption.textContent = 'Drag across the canvas to compare Line Art & Full Color';
+                compareStatusPill.classList.remove('is-visible');
+            } else {
+                const { canvas: recCanvas, hasPaint } = await renderArtworkVariant(art, 'canvas');
+                lbColor.src = recCanvas.toDataURL('image/png');
+                lbCaption.textContent = 'Drag across the canvas to compare Line Art & Your Experience State';
+                if (!hasPaint) {
+                    compareStatusPill.textContent = 'Not painted yet — brush this piece in Experience Mode to see your custom reveal';
+                    compareStatusPill.classList.add('is-visible');
+                } else {
+                    const saved = getSavedExperienceStates()[art.id];
+                    compareStatusPill.textContent = `Showing your recorded canvas (${saved?.pct ?? 100}% revealed in Experience Mode)`;
+                    compareStatusPill.classList.add('is-visible');
+                }
+            }
+        }
+
+        modeFullBtn.addEventListener('click', () => {
+            compareMode = 'full';
+            applyCompareSource();
+        });
+        modeRecBtn.addEventListener('click', () => {
+            compareMode = 'recorded';
+            applyCompareSource();
+        });
+
         function loadLightboxArtwork(idx, animateSwitch = false) {
             currentLightboxIdx = (idx + ARTWORKS.length) % ARTWORKS.length;
             const art = ARTWORKS[currentLightboxIdx];
@@ -1031,16 +1892,17 @@
                 lbIndex.textContent = art.index;
                 lbTitle.textContent = art.title;
                 lbLine.src = art.line;
-                lbColor.src = art.color;
+                applyCompareSource();
                 setComparePosition(0.5);
             };
 
             if (animateSwitch) {
+                playPaperRustle();
                 compareStage.classList.add('switching');
                 setTimeout(() => {
                     apply();
                     compareStage.classList.remove('switching');
-                }, 260);
+                }, 250);
             } else {
                 apply();
             }
@@ -1062,8 +1924,10 @@
 
         function openLightbox(idx) {
             document.body.classList.remove('cursor-inspect');
+            document.body.classList.add('modal-open');
             cursorLabel.textContent = '';
             compareRect = null;
+            playPaperRustle();
             loadLightboxArtwork(idx, false);
             lightbox.classList.add('is-open');
             requestAnimationFrame(() => setComparePosition(0.5));
@@ -1071,6 +1935,7 @@
 
         function closeLightbox() {
             lightbox.classList.remove('is-open');
+            document.body.classList.remove('modal-open');
         }
 
         document.getElementById('lb-close').addEventListener('click', closeLightbox);
@@ -1082,6 +1947,10 @@
         });
 
         window.addEventListener('keydown', (e) => {
+            if (shareModal.classList.contains('is-open')) {
+                if (e.key === 'Escape') closeShareModal();
+                return;
+            }
             if (!lightbox.classList.contains('is-open')) return;
             if (e.key === 'Escape') closeLightbox();
             if (e.key === 'ArrowLeft') loadLightboxArtwork(currentLightboxIdx - 1, true);
@@ -1121,6 +1990,177 @@
             isDraggingSlider = false;
             compareRect = null;
         }, { passive: true });
+
+        // ============================================
+        // SHARE STUDIO MODAL LOGIC
+        // ============================================
+        const shareModal = document.getElementById('share-modal');
+        const sharePreviewCanvas = document.getElementById('share-preview-canvas');
+        const shareMusicInput = document.getElementById('share-music-input');
+        const shareMusicStatus = document.getElementById('share-music-status');
+        const shareMusicPreview = document.getElementById('share-music-preview');
+        const shareTitleToggle = document.getElementById('share-title-toggle');
+        const btnCopyLink = document.getElementById('btn-copy-link');
+
+        const shareState = {
+            variant: 'color',  // 'color' | 'line' | 'canvas'
+            cardStyle: 'museum', // 'museum' | 'noir' | 'polaroid' | 'minimal'
+            showTitle: true,
+            music: null
+        };
+
+        async function refreshSharePreview() {
+            const art = ARTWORKS[currentLightboxIdx];
+            await renderDesignCard(sharePreviewCanvas, art, shareState);
+        }
+
+        function openShareModal() {
+            shareState.variant = compareMode === 'recorded' ? 'canvas' : 'color';
+            document.querySelectorAll('#variant-pills .opt-pill').forEach(b => {
+                b.classList.toggle('active', b.dataset.variant === shareState.variant);
+            });
+            shareModal.classList.add('is-open');
+            refreshSharePreview();
+        }
+
+        function closeShareModal() {
+            shareModal.classList.remove('is-open');
+        }
+
+        document.getElementById('lb-share').addEventListener('click', openShareModal);
+        document.getElementById('share-close').addEventListener('click', closeShareModal);
+        shareModal.addEventListener('click', (e) => {
+            if (e.target === shareModal) closeShareModal();
+        });
+
+        document.querySelectorAll('#variant-pills .opt-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                shareState.variant = btn.dataset.variant;
+                document.querySelectorAll('#variant-pills .opt-pill').forEach(b => b.classList.toggle('active', b === btn));
+                refreshSharePreview();
+            });
+        });
+
+        document.querySelectorAll('#card-pills .opt-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                shareState.cardStyle = btn.dataset.card;
+                document.querySelectorAll('#card-pills .opt-pill').forEach(b => b.classList.toggle('active', b === btn));
+                refreshSharePreview();
+            });
+        });
+
+        shareTitleToggle.addEventListener('change', () => {
+            shareState.showTitle = shareTitleToggle.checked;
+            refreshSharePreview();
+        });
+
+        shareMusicInput.addEventListener('input', () => {
+            const parsed = parseMusicUrl(shareMusicInput.value);
+            shareMusicStatus.classList.remove('valid', 'invalid');
+            if (!parsed) {
+                shareState.music = null;
+                shareMusicStatus.textContent = 'Optional — plays as an embedded soundtrack when opened';
+                mountMusicEmbed(shareMusicPreview, null);
+            } else if (parsed.invalid) {
+                shareState.music = null;
+                shareMusicStatus.textContent = 'Paste a valid Spotify (track/album/playlist) or YouTube Music link';
+                shareMusicStatus.classList.add('invalid');
+                mountMusicEmbed(shareMusicPreview, null);
+            } else {
+                shareState.music = parsed;
+                shareMusicStatus.textContent = `✓ Attached ${parsed.label} player`;
+                shareMusicStatus.classList.add('valid');
+                mountMusicEmbed(shareMusicPreview, parsed);
+            }
+        });
+
+        function buildShareUrl() {
+            const art = ARTWORKS[currentLightboxIdx];
+            const url = new URL(window.location.href.split('?')[0].split('#')[0]);
+            url.searchParams.set('share', '1');
+            url.searchParams.set('art', art.id);
+            url.searchParams.set('variant', shareState.variant);
+            url.searchParams.set('card', shareState.cardStyle);
+            url.searchParams.set('title', shareState.showTitle ? '1' : '0');
+            if (shareState.music && !shareState.music.invalid) {
+                url.searchParams.set('music', shareState.music.code);
+            }
+            if (shareState.variant === 'canvas') {
+                const saved = getSavedExperienceStates()[art.id];
+                const encoded = encodeStrokeState(saved);
+                if (encoded) url.hash = 's=' + encoded;
+            }
+            return url.toString();
+        }
+
+        btnCopyLink.addEventListener('click', async () => {
+            const link = buildShareUrl();
+            try {
+                await navigator.clipboard.writeText(link);
+                btnCopyLink.textContent = 'Link Copied ✓';
+            } catch {
+                window.prompt('Copy your share link:', link);
+            }
+            setTimeout(() => { btnCopyLink.textContent = 'Copy Share Link'; }, 2200);
+        });
+
+        function downloadCanvasPng(canvasEl, filename) {
+            const a = document.createElement('a');
+            a.download = filename;
+            a.href = canvasEl.toDataURL('image/png');
+            a.click();
+        }
+
+        document.getElementById('btn-download-card').addEventListener('click', () => {
+            const art = ARTWORKS[currentLightboxIdx];
+            downloadCanvasPng(sharePreviewCanvas, `lumina-${art.id}-${shareState.cardStyle}.png`);
+        });
+
+        // ============================================
+        // SHARED LINK SHOWCASE INITIALIZATION
+        // ============================================
+        (async function initSharedShowcaseIfPresent() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('share') !== '1') return;
+
+            const artId = params.get('art') || 'glimpse';
+            const art = ARTWORKS.find(a => a.id === artId) || ARTWORKS[0];
+            const variant = ['color', 'line', 'canvas'].includes(params.get('variant')) ? params.get('variant') : 'color';
+            const cardStyle = ['museum', 'noir', 'polaroid', 'minimal'].includes(params.get('card')) ? params.get('card') : 'museum';
+            const showTitle = params.get('title') !== '0';
+            const musicParsed = parseMusicUrl(params.get('music') || '');
+
+            // Decode shared brush strokes from hash if present
+            let overrideState = null;
+            const hashMatch = window.location.hash.match(/s=([^&]+)/);
+            if (hashMatch) {
+                overrideState = decodeStrokeState(hashMatch[1]);
+            }
+
+            const showcase = document.getElementById('shared-showcase');
+            const showcaseCanvas = document.getElementById('showcase-canvas');
+            const showcasePlayer = document.getElementById('showcase-player');
+            const showcaseGlow = document.getElementById('showcase-glow');
+
+            showcaseGlow.style.background = art.glow;
+            showcase.classList.add('is-open');
+            document.body.classList.add('modal-open');
+
+            await renderDesignCard(showcaseCanvas, art, { variant, cardStyle, showTitle, overrideState });
+            if (musicParsed && !musicParsed.invalid) {
+                mountMusicEmbed(showcasePlayer, musicParsed);
+            }
+
+            document.getElementById('showcase-explore').addEventListener('click', () => {
+                showcase.classList.remove('is-open');
+                document.body.classList.remove('modal-open');
+                history.replaceState(null, '', window.location.pathname);
+            });
+
+            document.getElementById('showcase-download').addEventListener('click', () => {
+                downloadCanvasPng(showcaseCanvas, `lumina-${art.id}-${cardStyle}.png`);
+            });
+        })();
     </script>
 </body>
 </html>
