@@ -3,319 +3,891 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Lumina. — Interactive Art Gallery Experience</title>
+    <meta name="description" content="Lumina. An interactive digital art gallery experience by @agiizart where brushstrokes reveal color from monochrome line art.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-
-        body {
-            background-color: #f5f2e9; 
-            color: #2a2a2a;
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            scrollbar-width: none; 
+        :root {
+            --bg-paper: #f5f2e9;
+            --bg-paper-deep: #ece6d8;
+            --ink-primary: #1a1917;
+            --ink-secondary: #5c5850;
+            --ink-muted: rgba(26, 25, 23, 0.38);
+            --accent-warm: #a67c52;
+            --border-subtle: rgba(26, 25, 23, 0.1);
+            --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
+            --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-		
-		* {
+
+        * {
+            box-sizing: border-box;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
-        *::-webkit-scrollbar {
-            display: none;
+        *::-webkit-scrollbar { display: none; }
+
+        html, body {
+            background-color: var(--bg-paper);
+            color: var(--ink-primary);
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-       /* --- SMOOTH TRANSITION OVERLAY --- */
+        /* Subtle museum paper grain overlay */
+        .paper-grain {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 90;
+            opacity: 0.045;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* Ambient vignette that breathes with scroll */
+        #ambient-vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 15;
+            background: radial-gradient(circle at 50% 50%, transparent 48%, rgba(26, 25, 23, 0.09) 100%);
+            transition: opacity 0.8s var(--ease-expo);
+        }
+
+        /* ============================================
+           CINEMATIC SPLIT-CURTAIN INTRO & PAGE TRANSITION
+           ============================================ */
         #intro-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: #f5f2e9;
+            inset: 0;
             z-index: 9999;
             display: flex;
-            flex-direction: column; /* <--- THIS STACKS THEM VERTICALLY */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            opacity: 1;
-            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
             pointer-events: all;
+            overflow: hidden;
+        }
+
+        .curtain-panel {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 25.2%;
+            background-color: #161513;
+            transform: scaleY(1);
+            transform-origin: top center;
+            transition: transform 1.05s var(--ease-expo);
+            will-change: transform;
+        }
+
+        .curtain-panel:nth-child(1) { left: 0%; transition-delay: 0.04s; }
+        .curtain-panel:nth-child(2) { left: 25%; transition-delay: 0.11s; }
+        .curtain-panel:nth-child(3) { left: 50%; transition-delay: 0.18s; }
+        .curtain-panel:nth-child(4) { left: 75%; transition-delay: 0.25s; }
+
+        #intro-overlay.curtain-open {
+            pointer-events: none;
+        }
+
+        #intro-overlay.curtain-open .curtain-panel {
+            transform: scaleY(0);
+            transform-origin: top center;
+        }
+
+        #intro-overlay.curtain-closing {
+            pointer-events: all;
+        }
+
+        #intro-overlay.curtain-closing .curtain-panel {
+            transform: scaleY(1);
+            transform-origin: bottom center;
+        }
+
+        .intro-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            transition: opacity 0.55s var(--ease-quart), transform 0.65s var(--ease-expo);
+        }
+
+        #intro-overlay.curtain-open .intro-content {
+            opacity: 0;
+            transform: translateY(-24px) scale(0.96);
+        }
+
+        .intro-title-mask {
+            overflow: hidden;
+            padding: 0.2rem 0;
         }
 
         #intro-text {
             font-family: 'Syncopate', sans-serif;
             font-weight: 700;
-            font-size: 3rem;
-            letter-spacing: 0.2em;
+            font-size: clamp(2rem, 6vw, 3.75rem);
+            letter-spacing: 0.28em;
             text-transform: uppercase;
-            color: #1a1a1a;
-            opacity: 0;
-            animation: introSequence 2.5s forwards;
+            color: var(--bg-paper);
+            margin: 0;
+            transform: translateY(115%);
+            animation: revealUp 1.05s var(--ease-expo) 0.18s forwards;
+        }
+
+        .intro-rule {
+            width: 0;
+            height: 1px;
+            background: rgba(245, 242, 233, 0.35);
+            margin: 1.25rem auto;
+            animation: expandRule 0.9s var(--ease-expo) 0.45s forwards;
+        }
+
+        .intro-sub-mask {
+            overflow: hidden;
         }
 
         #intro-subtext {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: #555; /* Slightly lighter than main text */
-            margin-top: 1rem; /* Space between title and subtitle */
-            opacity: 0;
-            /* Re-use the same animation, but delay it by 0.2s for a smooth effect */
-            animation: introSequence 2.5s forwards;
-            animation-delay: 0.2s; 
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(1rem, 2vw, 1.35rem);
+            letter-spacing: 0.18em;
+            color: rgba(245, 242, 233, 0.72);
+            transform: translateY(115%);
+            animation: revealUp 0.95s var(--ease-expo) 0.52s forwards;
         }
 
-        @keyframes introSequence {
-            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-            30% { opacity: 1; transform: translateY(0) scale(1); }
-            80% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-10px) scale(1.05); }
+        .intro-progress-track {
+            width: 140px;
+            height: 1px;
+            background: rgba(245, 242, 233, 0.14);
+            margin: 1.75rem auto 0;
+            overflow: hidden;
         }
 
-        .overlay-hidden {
-            opacity: 0 !important;
-            pointer-events: none !important;
+        .intro-progress-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-paper);
+            transform: scaleX(0);
+            transform-origin: left center;
+            animation: fillProgress 1.6s var(--ease-expo) 0.25s forwards;
         }
-        /* -------------------------------- */
 
+        @keyframes revealUp {
+            to { transform: translateY(0%); }
+        }
+
+        @keyframes expandRule {
+            to { width: 120px; }
+        }
+
+        @keyframes fillProgress {
+            to { transform: scaleX(1); }
+        }
+
+        /* ============================================
+           SCROLL STAGE & CANVAS
+           ============================================ */
         #scroll-container {
-            height: 900vh; 
+            height: 1100vh;
             width: 1px;
             pointer-events: none;
         }
 
         #fixed-view {
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
             z-index: 10;
         }
 
-        canvas { 
+        canvas {
             display: block;
-            cursor: none; 
+            cursor: none;
         }
 
+        /* ============================================
+           DUAL-RING MAGNETIC CUSTOM CURSOR
+           ============================================ */
+        #cursor-dot,
         #cursor-brush {
             position: fixed;
             top: 0;
             left: 0;
-            width: 20px;
-            height: 20px;
-            border: 1px solid #2a2a2a;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
             pointer-events: none;
-            z-index: 50;
-            transition: width 0.2s, height 0.2s, opacity 0.3s;
+            border-radius: 50%;
+            z-index: 120;
+            transform: translate(-50%, -50%);
+            will-change: transform, width, height, opacity;
         }
 
+        #cursor-dot {
+            width: 5px;
+            height: 5px;
+            background: var(--ink-primary);
+            transition: transform 0.2s var(--ease-expo), opacity 0.3s ease;
+        }
+
+        #cursor-brush {
+            width: 34px;
+            height: 34px;
+            border: 1px solid rgba(26, 25, 23, 0.55);
+            background: rgba(245, 242, 233, 0.08);
+            backdrop-filter: blur(1px);
+            transition: width 0.35s var(--ease-expo), height 0.35s var(--ease-expo),
+                        border-color 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
+        }
+
+        body.cursor-hover #cursor-brush {
+            width: 56px;
+            height: 56px;
+            border-color: var(--ink-primary);
+            background: rgba(26, 25, 23, 0.06);
+        }
+
+        body.cursor-hover #cursor-dot {
+            opacity: 0;
+        }
+
+        body.cursor-painting #cursor-brush {
+            width: 48px;
+            height: 48px;
+            border-color: var(--accent-warm);
+            background: rgba(166, 124, 82, 0.08);
+        }
+
+        body.cursor-hidden #cursor-brush,
+        body.cursor-hidden #cursor-dot {
+            opacity: 0;
+        }
+
+        /* Click ripple ring */
+        .cursor-ripple {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid rgba(26, 25, 23, 0.45);
+            pointer-events: none;
+            z-index: 115;
+            transform: translate(-50%, -50%) scale(0.4);
+            animation: rippleExpand 0.7s var(--ease-expo) forwards;
+        }
+
+        @keyframes rippleExpand {
+            0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.4); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(3.4); }
+        }
+
+        /* ============================================
+           UI LAYER (HEADER, CHAPTER RAIL, PLACARD, CONTROLS)
+           ============================================ */
         .ui-layer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             pointer-events: none;
             z-index: 40;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 2rem; 
+            padding: clamp(1.25rem, 3vw, 2.25rem);
         }
 
         .header-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             width: 100%;
             pointer-events: auto;
+            opacity: 0;
+            transform: translateY(-14px);
+            transition: opacity 0.9s var(--ease-expo) 0.2s, transform 0.9s var(--ease-expo) 0.2s;
+        }
+
+        body.app-ready .header-row {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .brand {
             font-family: 'Syncopate', sans-serif;
             font-weight: 700;
-            letter-spacing: 0.3em;
+            letter-spacing: 0.32em;
             text-transform: uppercase;
-            font-size: 1.25rem;
-            color: #1a1a1a;
+            font-size: 1.15rem;
+            color: var(--ink-primary);
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            transition: letter-spacing 0.5s var(--ease-expo), opacity 0.3s ease;
+        }
+
+        .brand:hover {
+            letter-spacing: 0.4em;
         }
 
         .top-menu {
             display: flex;
-            gap: 2rem;
+            align-items: center;
+            gap: clamp(1.25rem, 3vw, 2.5rem);
         }
 
         .menu-item {
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 0.15em;
+            font-size: 0.7rem;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: #1a1a1a;
+            color: var(--ink-primary);
             text-decoration: none;
             cursor: pointer;
             position: relative;
+            padding: 0.35rem 0;
+            transition: color 0.3s ease;
         }
 
         .menu-item::after {
             content: '';
             position: absolute;
-            bottom: -4px;
+            bottom: 0;
             left: 0;
-            width: 0%;
+            width: 100%;
             height: 1px;
-            background: #1a1a1a;
-            transition: width 0.3s ease;
+            background: var(--ink-primary);
+            transform: scaleX(0);
+            transform-origin: right center;
+            transition: transform 0.45s var(--ease-expo);
         }
 
         .menu-item:hover::after {
-            width: 100%;
+            transform: scaleX(1);
+            transform-origin: left center;
         }
 
+        /* Vertical Chapter Navigation Rail (Left Edge) */
+        .chapter-rail {
+            position: fixed;
+            left: clamp(1.25rem, 3vw, 2.25rem);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 45;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.9s var(--ease-expo) 0.4s;
+        }
+
+        body.app-ready .chapter-rail {
+            opacity: 1;
+        }
+
+        .chapter-dot-btn {
+            background: none;
+            border: none;
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            color: var(--ink-muted);
+            transition: color 0.4s var(--ease-expo), transform 0.4s var(--ease-expo);
+            text-align: left;
+        }
+
+        .chapter-dot-btn:hover {
+            color: var(--ink-primary);
+            transform: translateX(4px);
+        }
+
+        .chapter-dot-btn.active {
+            color: var(--ink-primary);
+        }
+
+        .chapter-indicator {
+            width: 16px;
+            height: 1px;
+            background: currentColor;
+            transition: width 0.55s var(--ease-expo), background-color 0.4s ease;
+        }
+
+        .chapter-dot-btn.active .chapter-indicator {
+            width: 34px;
+            height: 1.5px;
+            background: var(--ink-primary);
+        }
+
+        .chapter-label {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.55;
+            transition: opacity 0.4s ease;
+        }
+
+        .chapter-dot-btn.active .chapter-label,
+        .chapter-dot-btn:hover .chapter-label {
+            opacity: 1;
+        }
+
+        /* Editorial Artwork Placard (Bottom Left above ticker) */
+        .artwork-placard {
+            position: fixed;
+            left: clamp(1.25rem, 3vw, 2.25rem);
+            bottom: 4.5rem;
+            z-index: 42;
+            pointer-events: none;
+            max-width: 300px;
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 0.75s var(--ease-expo), transform 0.75s var(--ease-expo);
+        }
+
+        body.app-ready .artwork-placard {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .artwork-placard.placard-hidden {
+            opacity: 0 !important;
+            transform: translateY(14px) !important;
+        }
+
+        .placard-index {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.25em;
+            color: var(--accent-warm);
+            margin-bottom: 0.35rem;
+        }
+
+        .placard-title-wrap {
+            overflow: hidden;
+        }
+
+        .placard-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            margin: 0;
+            color: var(--ink-primary);
+            transition: transform 0.65s var(--ease-expo), opacity 0.45s ease;
+        }
+
+        .placard-title.switching {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .placard-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1rem;
+            color: var(--ink-secondary);
+            margin: 0.2rem 0 0.65rem;
+            transition: opacity 0.45s ease, transform 0.55s var(--ease-expo);
+        }
+
+        .placard-subtitle.switching {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        .reveal-meter {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .reveal-bar-track {
+            width: 96px;
+            height: 2px;
+            background: rgba(26, 25, 23, 0.12);
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .reveal-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--ink-primary);
+            transition: width 0.25s ease-out;
+        }
+
+        .reveal-pct {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Interactive Brush Action Controls (Bottom Right above ticker) */
+        .canvas-controls {
+            position: fixed;
+            right: clamp(1.25rem, 3vw, 2.25rem);
+            bottom: 4.5rem;
+            z-index: 45;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.75s var(--ease-expo) 0.35s, transform 0.75s var(--ease-expo) 0.35s;
+        }
+
+        body.app-ready .canvas-controls {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .canvas-controls.controls-hidden {
+            opacity: 0 !important;
+            transform: translateY(16px) !important;
+            pointer-events: none;
+        }
+
+        .ctrl-btn {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--ink-primary);
+            background: rgba(245, 242, 233, 0.72);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-subtle);
+            padding: 0.62rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.35s ease, border-color 0.35s ease, transform 0.4s var(--ease-expo), background-color 0.35s ease;
+        }
+
+        .ctrl-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--ink-primary);
+            transform: translateY(102%);
+            transition: transform 0.45s var(--ease-expo);
+            z-index: -1;
+        }
+
+        .ctrl-btn:hover {
+            color: var(--bg-paper);
+            border-color: var(--ink-primary);
+            transform: translateY(-2px);
+        }
+
+        .ctrl-btn:hover::before {
+            transform: translateY(0%);
+        }
+
+        /* Center Hint & Scroll Cue */
+        #hint {
+            position: fixed;
+            bottom: 4.7rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: rgba(26, 25, 23, 0.42);
+            z-index: 40;
+            text-align: center;
+            white-space: nowrap;
+            transition: opacity 0.5s ease, color 0.5s ease, transform 0.5s var(--ease-expo);
+        }
+
+        /* Top thin scroll progress bar */
+        #scroll-progress-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            width: 0%;
+            background: linear-gradient(90deg, var(--ink-primary), var(--accent-warm));
+            z-index: 80;
+            pointer-events: none;
+        }
+
+        /* Kinetic Marquee Footer */
         .gallery-footer {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            padding-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-top: 1px solid rgba(26, 25, 23, 0.06);
+            padding-top: 0.65rem;
+            opacity: 0;
+            transition: opacity 1s var(--ease-expo) 0.5s;
+        }
+
+        body.app-ready .gallery-footer {
+            opacity: 1;
         }
 
         .ticker-wrap {
-            display: inline-block;
+            display: inline-flex;
             white-space: nowrap;
-            animation: tickerScroll 40s linear infinite;
+            will-change: transform;
         }
 
         .ticker-item {
             display: inline-block;
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.75rem;
+            font-size: 0.68rem;
             font-weight: 400;
-            letter-spacing: 0.5em;
+            letter-spacing: 0.48em;
             text-transform: uppercase;
-            color: #3d3b34;
-            padding-right: 2rem;
+            color: #4a473f;
+            padding-right: 2.5rem;
         }
 
-        @keyframes tickerScroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
+        /* ============================================
+           CONTACT FINALE SECTION
+           ============================================ */
         #contact-section {
             position: fixed;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 100vh;
-            z-index: 30;
+            inset: 0;
+            z-index: 35;
             pointer-events: none;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding-right: 5vw;
+            padding-right: clamp(1.5rem, 6vw, 6vw);
+        }
+
+        .contact-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            width: 100%;
+            max-width: 390px;
+        }
+
+        .contact-eyebrow {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.15rem;
+            letter-spacing: 0.08em;
+            color: var(--ink-secondary);
+            margin-bottom: 0.85rem;
+            opacity: 0;
+            transform: translateX(48px);
+            transition: opacity 0.7s var(--ease-expo), transform 0.75s var(--ease-expo);
         }
 
         .contact-card {
-            display: block;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             text-decoration: none;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0,0,0,0.05);
-            padding: 1.5rem 2rem;
-            margin: 1rem 0;
-            width: 350px;
-            max-width: 85vw;
-            border-radius: 4px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            transform: translateX(120%);
-            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.6s;
+            background: rgba(255, 253, 248, 0.86);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(26, 25, 23, 0.08);
+            padding: 1.25rem 1.75rem;
+            margin: 0.45rem 0;
+            width: 100%;
+            border-radius: 3px;
+            box-shadow: 0 12px 32px rgba(26, 25, 23, 0.04);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateX(90px) scale(0.96);
+            filter: blur(6px);
+            pointer-events: none;
+            transition: transform 0.75s var(--ease-expo),
+                        opacity 0.65s var(--ease-expo),
+                        filter 0.65s var(--ease-expo),
+                        background-color 0.35s ease,
+                        box-shadow 0.4s ease,
+                        border-color 0.35s ease;
+        }
+
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--ink-primary);
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: transform 0.45s var(--ease-expo);
+        }
+
+        .contact-card.is-visible {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            filter: blur(0px);
             pointer-events: auto;
         }
 
-        .contact-card:hover {
+        .contact-card.is-visible:hover {
             background: #ffffff;
-            transform: translateX(-15px) !important;
+            border-color: rgba(26, 25, 23, 0.22);
+            transform: translateX(-12px) scale(1.01);
+            box-shadow: 0 18px 40px rgba(26, 25, 23, 0.08);
+        }
+
+        .contact-card.is-visible:hover::before {
+            transform: scaleY(1);
+            transform-origin: top;
         }
 
         .contact-card h3 {
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.7rem;
-            letter-spacing: 0.2em;
+            font-size: 0.62rem;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: #888;
-            margin-bottom: 0.5rem;
+            color: var(--ink-secondary);
+            margin: 0 0 0.35rem;
         }
 
         .contact-card p {
             font-weight: 600;
-            font-size: 1.1rem;
-            color: #1a1a1a;
+            font-size: 1.05rem;
+            color: var(--ink-primary);
+            margin: 0;
         }
 
-        /* --- BACK TO TOP BUTTON --- */
+        .card-arrow {
+            font-size: 1.1rem;
+            color: var(--ink-secondary);
+            transition: transform 0.45s var(--ease-expo), color 0.3s ease;
+        }
+
+        .contact-card:hover .card-arrow {
+            transform: translate(5px, -3px);
+            color: var(--ink-primary);
+        }
+
         #back-to-top {
             margin-top: 1rem;
-            padding: 1rem 2rem;
+            padding: 0.95rem 1.85rem;
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
+            font-size: 0.68rem;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: #1a1a1a;
-            border: 1px solid #1a1a1a;
+            color: var(--ink-primary);
+            border: 1px solid var(--ink-primary);
             background: transparent;
             cursor: pointer;
-            pointer-events: auto;
-            transform: translateX(120%);
+            position: relative;
+            overflow: hidden;
             opacity: 0;
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            transform: translateX(90px);
+            pointer-events: none;
+            transition: transform 0.75s var(--ease-expo), opacity 0.65s var(--ease-expo), color 0.35s ease;
         }
 
-        #back-to-top:hover {
-            background: #1a1a1a;
-            color: #f5f2e9;
+        #back-to-top::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--ink-primary);
+            transform: translateY(102%);
+            transition: transform 0.45s var(--ease-expo);
+            z-index: -1;
         }
 
+        #back-to-top.is-visible {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        #back-to-top.is-visible:hover {
+            color: var(--bg-paper);
+            transform: translateY(-3px);
+        }
+
+        #back-to-top.is-visible:hover::before {
+            transform: translateY(0%);
+        }
+
+        /* Loader */
         #loader {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-top-color: #2a2a2a;
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(26, 25, 23, 0.12);
+            border-top-color: var(--ink-primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             z-index: 100;
         }
 
-        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
 
-        #hint {
-            position: fixed;
-            bottom: 6rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.65rem;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: rgba(0, 0, 0, 0.3);
-            z-index: 40;
-            transition: opacity 0.5s, color 0.5s;
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            .chapter-rail { display: none; }
+            #hint { display: none; }
+            .artwork-placard { bottom: 4.2rem; max-width: 190px; }
+            .canvas-controls { bottom: 4.2rem; }
+            .ctrl-btn { padding: 0.5rem 0.75rem; font-size: 0.55rem; }
+            #contact-section { justify-content: center; padding-right: 1.25rem; padding-left: 1.25rem; }
+            .contact-stack { align-items: stretch; }
+        }
+
+        @media (hover: none) {
+            #cursor-brush, #cursor-dot { display: none; }
+            canvas { cursor: auto; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .curtain-panel, .contact-card, #back-to-top, .placard-title, .artwork-placard {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="paper-grain" aria-hidden="true"></div>
+    <div id="ambient-vignette" aria-hidden="true"></div>
+    <div id="scroll-progress-line" aria-hidden="true"></div>
 
-    <div id="intro-overlay" style="opacity: 1;">
-        <div id="intro-text">Lumina.</div>
-		<div id="intro-subtext">Art Gallery Experience Redefined.</div>
+    <!-- Cinematic Split-Curtain Intro / Page Transition -->
+    <div id="intro-overlay">
+        <div class="curtain-panel"></div>
+        <div class="curtain-panel"></div>
+        <div class="curtain-panel"></div>
+        <div class="curtain-panel"></div>
+        <div class="intro-content" id="intro-content">
+            <div class="intro-title-mask">
+                <h1 id="intro-text">Lumina.</h1>
+            </div>
+            <div class="intro-rule"></div>
+            <div class="intro-sub-mask">
+                <div id="intro-subtext">Art Gallery Experience Redefined</div>
+            </div>
+            <div class="intro-progress-track">
+                <div class="intro-progress-bar"></div>
+            </div>
+        </div>
     </div>
 
     <div id="scroll-container"></div>
@@ -323,147 +895,337 @@
     <div id="fixed-view">
         <canvas id="artCanvas"></canvas>
     </div>
-    
-    <div id="cursor-brush"></div>
+
+    <div id="cursor-brush" aria-hidden="true"></div>
+    <div id="cursor-dot" aria-hidden="true"></div>
 
     <div class="ui-layer">
-        <div class="header-row">
-            <a href="#" onclick="window.scrollTo(0,0); return false;" class="brand">Lumina.</a>
-            <div class="top-menu">
-                <a href="gallery.html" class="menu-item transition-link">Gallery View</a>
-                <a href="#" onclick="scrollToContact(); return false;" class="menu-item">Contact</a>
-            </div>
-        </div>
+        <header class="header-row">
+            <a href="#" onclick="smoothScrollTo(0); return false;" class="brand hover-target">Lumina.</a>
+            <nav class="top-menu" aria-label="Primary Navigation">
+                <a href="gallery.html" class="menu-item transition-link hover-target">Gallery View</a>
+                <a href="#" onclick="scrollToContact(); return false;" class="menu-item hover-target">Contact</a>
+            </nav>
+        </header>
 
-        <div id="hint">Hover to Paint</div>
-        <div class="gallery-footer">
-            <div class="ticker-wrap">
-                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
-                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
-                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
-                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
-                <span class="ticker-item">LUMINA. • ART GALLERY • @AGIIZART • </span>
+        <div id="hint">Move Brush to Reveal Color</div>
+
+        <footer class="gallery-footer">
+            <div class="ticker-wrap" id="ticker-wrap">
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
             </div>
+        </footer>
+    </div>
+
+    <!-- Chapter Navigation Rail -->
+    <aside class="chapter-rail" aria-label="Exhibition Chapters">
+        <button class="chapter-dot-btn active hover-target" data-target="0" aria-label="Jump to Glimpse">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">01 Glimpse</span>
+        </button>
+        <button class="chapter-dot-btn hover-target" data-target="0.40" aria-label="Jump to Minju">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">02 Minju</span>
+        </button>
+        <button class="chapter-dot-btn hover-target" data-target="0.72" aria-label="Jump to Miyabi">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">03 Miyabi</span>
+        </button>
+        <button class="chapter-dot-btn hover-target" data-target="1" aria-label="Jump to Contact">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">04 Contact</span>
+        </button>
+    </aside>
+
+    <!-- Editorial Artwork Placard -->
+    <div class="artwork-placard" id="artwork-placard">
+        <div class="placard-index" id="placard-index">01 / 03</div>
+        <div class="placard-title-wrap">
+            <h2 class="placard-title" id="placard-title">Glimpse</h2>
+        </div>
+        <p class="placard-subtitle" id="placard-subtitle">Digital Ink &amp; Chromatic Study</p>
+        <div class="reveal-meter">
+            <div class="reveal-bar-track">
+                <div class="reveal-bar-fill" id="reveal-bar-fill"></div>
+            </div>
+            <span class="reveal-pct" id="reveal-pct">0% Revealed</span>
         </div>
     </div>
 
-    <div id="contact-section">
-        <div class="flex flex-col items-end">
-            <a href="https://instagram.com/agiizart" target="_blank" class="contact-card" style="transition-delay: 0.1s;">
-                <h3>Instagram</h3>
-                <p>@agiizart</p>
-            </a>
-            
-            <a href="https://instagram.com/agiizart" class="contact-card" style="transition-delay: 0.2s;">
-                <h3>Portfolio</h3>
-                <p>@agiizart</p>
-            </a>
-            
-            <a href="https://www.google.com/maps/search/Quezon+City%2C+Philippines" target="_blank" class="contact-card" style="transition-delay: 0.3s;">
-                <h3>Location</h3>
-                <p>Quezon City</p>
-            </a>
-            
-            <a href="#" class="contact-card" style="transition-delay: 0.4s;">
-                <h3>Webpage by</h3>
-                <p>@Coolitz.</p>
+    <!-- Interactive Brush Controls -->
+    <div class="canvas-controls" id="canvas-controls">
+        <button class="ctrl-btn hover-target" id="btn-bloom" title="Animate watercolor reveal across the artwork">Bloom Reveal</button>
+        <button class="ctrl-btn hover-target" id="btn-reset" title="Reset artwork to monochrome line art">Reset Ink</button>
+    </div>
+
+    <!-- Contact Finale -->
+    <section id="contact-section" aria-label="Contact Information">
+        <div class="contact-stack">
+            <div class="contact-eyebrow" id="contact-eyebrow">Commission &amp; Inquiries</div>
+
+            <a href="https://instagram.com/agiizart" target="_blank" rel="noopener" class="contact-card hover-target" style="transition-delay: 0.06s;">
+                <div>
+                    <h3>Instagram</h3>
+                    <p>@agiizart</p>
+                </div>
+                <span class="card-arrow">↗</span>
             </a>
 
-            <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="transition-delay: 0.5s;">
+            <a href="https://instagram.com/agiizart" target="_blank" rel="noopener" class="contact-card hover-target" style="transition-delay: 0.13s;">
+                <div>
+                    <h3>Portfolio</h3>
+                    <p>@agiizart</p>
+                </div>
+                <span class="card-arrow">↗</span>
+            </a>
+
+            <a href="https://www.google.com/maps/search/Quezon+City%2C+Philippines" target="_blank" rel="noopener" class="contact-card hover-target" style="transition-delay: 0.2s;">
+                <div>
+                    <h3>Location</h3>
+                    <p>Quezon City</p>
+                </div>
+                <span class="card-arrow">↗</span>
+            </a>
+
+            <a href="gallery.html" class="contact-card transition-link hover-target" style="transition-delay: 0.27s;">
+                <div>
+                    <h3>Exhibition</h3>
+                    <p>Open Full Gallery</p>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <button id="back-to-top" class="hover-target" onclick="smoothScrollTo(0)" style="transition-delay: 0.34s;">
                 Back to Top ↑
             </button>
         </div>
-    </div>
+    </section>
 
-    <div id="loader"></div>
+    <div id="loader" aria-label="Loading artworks"></div>
 
     <script>
-        const SET_1 = { color: 'glimpse.png', line: 'glimpse_1.png' };
-        const SET_2 = { color: 'miyabi 2.png', line: 'miyabi.png' };
-        
-        const BRUSH_RADIUS = 60; 
+        // ============================================
+        // ARTWORK CONFIGURATION (All 3 Pieces)
+        // ============================================
+        const SCENES = [
+            {
+                id: 'glimpse',
+                index: '01 / 03',
+                title: 'Glimpse',
+                subtitle: 'Digital Ink & Chromatic Study',
+                colorSrc: 'glimpse.png',
+                lineSrc: 'glimpse_1.png',
+                hint: 'Move Brush to Reveal Glimpse'
+            },
+            {
+                id: 'minju',
+                index: '02 / 03',
+                title: 'Minju',
+                subtitle: 'Portrait in Light & Line',
+                colorSrc: 'minju_colored.png',
+                lineSrc: 'minju_line_art.png',
+                hint: 'Move Brush to Reveal Minju'
+            },
+            {
+                id: 'miyabi',
+                index: '03 / 03',
+                title: 'Miyabi',
+                subtitle: 'Cinematic Panorama Composition',
+                colorSrc: 'miyabi 2.png',
+                lineSrc: 'miyabi.png',
+                hint: 'Move Brush to Reveal Miyabi'
+            }
+        ];
+
+        const BRUSH_RADIUS = 64;
 
         const canvas = document.getElementById('artCanvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const loader = document.getElementById('loader');
         const hint = document.getElementById('hint');
         const contactCards = document.querySelectorAll('.contact-card');
+        const contactEyebrow = document.getElementById('contact-eyebrow');
         const backToTopBtn = document.getElementById('back-to-top');
         const cursorBrush = document.getElementById('cursor-brush');
+        const cursorDot = document.getElementById('cursor-dot');
         const overlay = document.getElementById('intro-overlay');
+        const introContent = document.getElementById('intro-content');
+        const scrollProgressLine = document.getElementById('scroll-progress-line');
+        const chapterButtons = document.querySelectorAll('.chapter-dot-btn');
+        const placard = document.getElementById('artwork-placard');
+        const placardIndex = document.getElementById('placard-index');
+        const placardTitle = document.getElementById('placard-title');
+        const placardSubtitle = document.getElementById('placard-subtitle');
+        const revealBarFill = document.getElementById('reveal-bar-fill');
+        const revealPct = document.getElementById('reveal-pct');
+        const canvasControls = document.getElementById('canvas-controls');
+        const tickerWrap = document.getElementById('ticker-wrap');
 
-        // --- IMPROVED TRANSITION LOGIC ---
-        
-        // 1. Force overlay hidden on normal load (after animation)
+        // ============================================
+        // EASING HELPERS
+        // ============================================
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+        const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
+
+        // ============================================
+        // CINEMATIC CURTAIN TRANSITIONS
+        // ============================================
+        function openCurtain() {
+            overlay.classList.add('curtain-open');
+            document.body.classList.add('app-ready');
+        }
+
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                overlay.classList.add('overlay-hidden');
-            }, 2300);
+            setTimeout(openCurtain, 1850);
         });
 
-        // 2. Fix the "Blink" on Back Button (BFCache restore)
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) {
-                // If page is restored from cache, force overlay hidden immediately
-                // preventing the "fade-in" stuck state
-                overlay.classList.add('overlay-hidden');
+                overlay.classList.remove('curtain-closing');
+                openCurtain();
             }
         });
 
-        // 3. Smooth Exit
-        const transitionLinks = document.querySelectorAll('.transition-link');
-        transitionLinks.forEach(link => {
+        document.querySelectorAll('.transition-link').forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 const target = link.href;
-                document.getElementById('intro-text').style.display = 'none'; // Hide text
-                overlay.classList.remove('overlay-hidden'); // Show white screen
+                introContent.style.opacity = '0';
+                overlay.classList.remove('curtain-open');
+                overlay.classList.add('curtain-closing');
                 setTimeout(() => {
                     window.location.href = target;
-                }, 800);
+                }, 850);
             });
         });
-        // ---------------------------------
 
-        function scrollToContact() {
-            window.scrollTo({
-                top: document.body.scrollHeight,
-                behavior: 'smooth'
-            });
+        function smoothScrollTo(progressFraction) {
+            const max = document.documentElement.scrollHeight - window.innerHeight;
+            window.scrollTo({ top: max * progressFraction, behavior: 'smooth' });
         }
 
-        const images = {
-            s1Color: new Image(), s1Line: new Image(),
-            s2Color: new Image(), s2Line: new Image()
+        function scrollToContact() {
+            smoothScrollTo(1);
+        }
+
+        chapterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                smoothScrollTo(parseFloat(btn.dataset.target));
+            });
+        });
+
+        // ============================================
+        // CUSTOM MAGNETIC CURSOR & CLICK RIPPLES
+        // ============================================
+        const pointer = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            ringX: window.innerWidth / 2,
+            ringY: window.innerHeight / 2,
+            normX: 0,
+            normY: 0,
+            smoothNormX: 0,
+            smoothNormY: 0,
+            lastPaintX: null,
+            lastPaintY: null,
+            active: false
         };
 
-        const mask1Canvas = document.createElement('canvas');
-        const mask1Ctx = mask1Canvas.getContext('2d');
-        const mask2Canvas = document.createElement('canvas');
-        const mask2Ctx = mask2Canvas.getContext('2d');
-        
+        document.querySelectorAll('.hover-target').forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            const ripple = document.createElement('div');
+            ripple.className = 'cursor-ripple';
+            ripple.style.left = `${e.clientX}px`;
+            ripple.style.top = `${e.clientY}px`;
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 750);
+        });
+
+        document.addEventListener('mouseleave', () => {
+            document.body.classList.add('cursor-hidden');
+            pointer.lastPaintX = null;
+            pointer.lastPaintY = null;
+        });
+
+        document.addEventListener('mouseenter', () => {
+            document.body.classList.remove('cursor-hidden');
+        });
+
+        // ============================================
+        // ARTWORK ASSETS, MASKS & PARTICLES
+        // ============================================
+        const sceneData = SCENES.map(cfg => {
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            return {
+                ...cfg,
+                colorImg: new Image(),
+                lineImg: new Image(),
+                maskCanvas,
+                maskCtx,
+                revealProgress: 0,
+                bloomActive: false,
+                bloomRadius: 0
+            };
+        });
+
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
 
-        let loaded = false;
-        let scrollProgress = 0;
-        let activeScene = 1; 
-
-        let loadedCount = 0;
-        function checkReady() {
-            loadedCount++;
-            if (loadedCount === 4) startApp();
+        // Subtle floating ink/gold dust particles spawned along brushstrokes
+        const particles = [];
+        function spawnParticle(x, y) {
+            if (particles.length > 55) return;
+            particles.push({
+                x,
+                y,
+                vx: (Math.random() - 0.5) * 1.1,
+                vy: -0.35 - Math.random() * 0.9,
+                size: 1.2 + Math.random() * 2.4,
+                alpha: 0.45 + Math.random() * 0.35,
+                life: 0,
+                maxLife: 36 + Math.random() * 30,
+                warm: Math.random() > 0.45
+            });
         }
 
-        images.s1Color.src = SET_1.color;
-        images.s1Line.src = SET_1.line;
-        images.s2Color.src = SET_2.color;
-        images.s2Line.src = SET_2.line;
+        let loaded = false;
+        let loadedCount = 0;
+        const totalImages = sceneData.length * 2;
 
-        Object.values(images).forEach(img => {
-            img.onload = checkReady;
-            img.onerror = checkReady; 
+        function checkReady() {
+            loadedCount++;
+            if (loadedCount === totalImages) startApp();
+        }
+
+        sceneData.forEach(s => {
+            s.colorImg.onload = checkReady;
+            s.colorImg.onerror = checkReady;
+            s.lineImg.onload = checkReady;
+            s.lineImg.onerror = checkReady;
+            s.colorImg.src = s.colorSrc;
+            s.lineImg.src = s.lineSrc;
         });
+
+        // ============================================
+        // SCROLL & CHAPTER STATE (WITH INERTIA LERP)
+        // ============================================
+        let targetScroll = 0;
+        let smoothScroll = 0;
+        let scrollVelocity = 0;
+        let activeSceneIndex = 0;
+        let inContactMode = false;
+        let tickerOffset = 0;
 
         function startApp() {
             loaded = true;
@@ -472,98 +1234,28 @@
             requestAnimationFrame(animate);
         }
 
-        function getViewParams(isMiyabi, progress) {
-            const viewW = window.innerWidth;
-            const viewH = window.innerHeight;
-            const refImg = isMiyabi ? images.s2Color : images.s1Color;
-            const imgW = refImg.width || 800;
-            const imgH = refImg.height || 1000;
-            const padding = 120;
-            const baseScale = Math.min((viewW - padding) / imgW, (viewH - padding) / imgH);
-            const settledW = imgW * baseScale;
-            const settledH = imgH * baseScale;
+        function updateMaskSize(scene) {
+            const img = scene.colorImg;
+            const padding = window.innerWidth < 768 ? 72 : 140;
+            const scale = Math.min(
+                (window.innerWidth - padding) / (img.width || 800),
+                (window.innerHeight - padding) / (img.height || 1000)
+            );
+            const newW = Math.max(1, Math.round((img.width || 800) * scale));
+            const newH = Math.max(1, Math.round((img.height || 1000) * scale));
 
-            let currentScale, currentOpacity, translateX, translateY;
-            translateX = viewW / 2;
-            translateY = viewH / 2;
-
-            if (!isMiyabi) {
-                currentOpacity = Math.max(0, 1 - (progress * 2.0)); 
-                currentScale = 1 - (progress * 0.3);
-            } else {
-                const start = 0.2;
-                const end = 0.6;
-                const norm = Math.max(0, Math.min(1, (progress - start) / (end - start)));
-                const zoomFactor = 6.0;
-                currentScale = zoomFactor - (norm * (zoomFactor - 1));
-                currentOpacity = norm;
-
-                if (progress > 0.8) {
-                    const slideP = (progress - 0.8) / 0.2;
-                    translateX = (viewW / 2) - (slideP * (viewW * 0.25));
-                    currentScale *= (1 - (slideP * 0.25));
-                    currentOpacity = 1.0;
-                }
-            }
-
-            return { 
-                scale: currentScale, 
-                opacity: currentOpacity, 
-                tx: translateX, 
-                ty: translateY, 
-                sw: settledW, 
-                sh: settledH 
-            };
-        }
-
-        function paint(clientX, clientY) {
-            if (!loaded) return;
-            
-            cursorBrush.style.top = `${clientY}px`;
-            cursorBrush.style.left = `${clientX}px`;
-
-            const isMiyabi = activeScene === 2;
-            const params = getViewParams(isMiyabi, scrollProgress);
-            const targetCtx = isMiyabi ? mask2Ctx : mask1Ctx;
-            
-            const paintX = (clientX - params.tx) / params.scale + (params.sw / 2);
-            const paintY = (clientY - params.ty) / params.scale + (params.sh / 2);
-
-            targetCtx.globalCompositeOperation = 'source-over';
-            targetCtx.beginPath();
-            targetCtx.arc(paintX, paintY, BRUSH_RADIUS / params.scale, 0, Math.PI * 2);
-            
-            const brushAlpha = 0.05; 
-            targetCtx.fillStyle = `rgba(255, 255, 255, ${brushAlpha})`;
-            targetCtx.shadowBlur = 30 / params.scale;
-            targetCtx.shadowColor = `rgba(255, 255, 255, ${brushAlpha})`;
-            targetCtx.fill();
-            targetCtx.shadowBlur = 0;
-        }
-
-        window.addEventListener('mousemove', (e) => paint(e.clientX, e.clientY));
-        window.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            paint(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-
-        window.addEventListener('resize', resize);
-
-        function updateMaskSize(maskCanvas, maskCtx, img) {
-            const padding = 120;
-            const scale = Math.min((window.innerWidth - padding) / (img.width || 800), (window.innerHeight - padding) / (img.height || 1000));
-            const newW = (img.width || 800) * scale;
-            const newH = (img.height || 1000) * scale;
-
-            if (maskCanvas.width !== newW || maskCanvas.height !== newH) {
+            if (scene.maskCanvas.width !== newW || scene.maskCanvas.height !== newH) {
                 const buffer = document.createElement('canvas');
-                buffer.width = maskCanvas.width;
-                buffer.height = maskCanvas.height;
-                buffer.getContext('2d').drawImage(maskCanvas, 0, 0);
-
-                maskCanvas.width = newW;
-                maskCanvas.height = newH;
-                maskCtx.drawImage(buffer, 0, 0, newW, newH);
+                buffer.width = scene.maskCanvas.width || 1;
+                buffer.height = scene.maskCanvas.height || 1;
+                if (scene.maskCanvas.width > 0 && scene.maskCanvas.height > 0) {
+                    buffer.getContext('2d').drawImage(scene.maskCanvas, 0, 0);
+                }
+                scene.maskCanvas.width = newW;
+                scene.maskCanvas.height = newH;
+                if (buffer.width > 1) {
+                    scene.maskCtx.drawImage(buffer, 0, 0, newW, newH);
+                }
             }
         }
 
@@ -571,97 +1263,370 @@
             if (!loaded) return;
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            
-            updateMaskSize(mask1Canvas, mask1Ctx, images.s1Color);
-            updateMaskSize(mask2Canvas, mask2Ctx, images.s2Color);
-            
-            const refImg = activeScene === 1 ? images.s1Color : images.s2Color;
-            const scale = Math.min((canvas.width - 120) / (refImg.width || 800), (canvas.height - 120) / (refImg.height || 1000));
-            tempCanvas.width = (refImg.width || 800) * scale;
-            tempCanvas.height = (refImg.height || 1000) * scale;
+            sceneData.forEach(updateMaskSize);
         }
 
+        window.addEventListener('resize', resize);
+
         window.addEventListener('scroll', () => {
-            const max = document.documentElement.scrollHeight - window.innerHeight;
-            scrollProgress = Math.min(1, Math.max(0, window.scrollY / max));
-            
-            const targetScene = scrollProgress < 0.35 ? 1 : 2;
-            if (targetScene !== activeScene) {
-                activeScene = targetScene;
-                const refImg = activeScene === 1 ? images.s1Color : images.s2Color;
-                const scale = Math.min((window.innerWidth - 120) / (refImg.width || 800), (window.innerHeight - 120) / (refImg.height || 1000));
-                tempCanvas.width = (refImg.width || 800) * scale;
-                tempCanvas.height = (refImg.height || 1000) * scale;
-            }
-
-            if (scrollProgress > 0.85) {
-                hint.innerText = "Connect with us";
-                hint.style.color = "#1a1a1a";
-                canvas.style.cursor = 'auto';
-            } else {
-                hint.innerText = targetScene === 1 ? "Hover to Reveal Glimpse" : "Hover to Reveal Miyabi";
-                hint.style.color = "rgba(0,0,0,0.3)";
-                canvas.style.cursor = 'none';
-            }
-
-            // Animate Contact Cards & Back to Top
-            const contactEntry = 0.8;
-            if (scrollProgress > contactEntry) {
-                const p = (scrollProgress - contactEntry) / (1 - contactEntry);
-                
-                // Animate Cards
-                contactCards.forEach((card) => {
-                    const slide = Math.max(0, 120 - (p * 180));
-                    card.style.transform = `translateX(${slide}%)`;
-                    card.style.opacity = p;
-                });
-
-                // Animate Back To Top Button
-                // It comes in slightly after the cards
-                const btnSlide = Math.max(0, 120 - (p * 180));
-                backToTopBtn.style.transform = `translateX(${btnSlide}%)`;
-                backToTopBtn.style.opacity = p;
-
-            } else {
-                contactCards.forEach(card => {
-                    card.style.transform = `translateX(120%)`;
-                    card.style.opacity = 0;
-                });
-                // Reset button
-                backToTopBtn.style.transform = `translateX(120%)`;
-                backToTopBtn.style.opacity = 0;
-            }
+            const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            targetScroll = clamp(window.scrollY / max, 0, 1);
         }, { passive: true });
 
-        function drawArt(colorImg, lineImg, progress, isMiyabi) {
-            const params = getViewParams(isMiyabi, progress);
-            if (params.opacity <= 0) return;
+        // ============================================
+        // CHOREOGRAPHED SCENE TRANSITION PARAMETERS
+        // ============================================
+        function getViewParams(sceneIdx, p) {
+            const viewW = window.innerWidth;
+            const viewH = window.innerHeight;
+            const scene = sceneData[sceneIdx];
+            const imgW = scene.colorImg.width || 800;
+            const imgH = scene.colorImg.height || 1000;
+            const padding = viewW < 768 ? 72 : 140;
+            const baseScale = Math.min((viewW - padding) / imgW, (viewH - padding) / imgH);
+            const settledW = imgW * baseScale;
+            const settledH = imgH * baseScale;
+
+            let scale = 1;
+            let opacity = 0;
+            let tx = viewW / 2;
+            let ty = viewH / 2;
+            let rotation = 0;
+            let clipProgress = 1; // 1 = fully visible, 0 = clipped closed
+
+            if (sceneIdx === 0) {
+                // SCENE 01: GLIMPSE (0.00 -> 0.32)
+                const outT = clamp((p - 0.14) / 0.18, 0, 1);
+                const easedOut = easeInOutCubic(outT);
+                opacity = 1 - easedOut;
+                scale = 1 - easedOut * 0.24;
+                ty = viewH / 2 - easedOut * (viewH * 0.08);
+                rotation = -easedOut * 0.045;
+            } else if (sceneIdx === 1) {
+                // SCENE 02: MINJU (0.20 -> 0.62) — Iris / curtain unveil + graceful drift
+                const inT = clamp((p - 0.20) / 0.18, 0, 1);
+                const outT = clamp((p - 0.46) / 0.16, 0, 1);
+                const easedIn = easeOutQuart(inT);
+                const easedOut = easeInOutCubic(outT);
+
+                opacity = easedIn * (1 - easedOut);
+                scale = lerp(1.38, 1.0, easedIn) * (1 - easedOut * 0.22);
+                ty = viewH / 2 + (1 - easedIn) * 65 - easedOut * 55;
+                rotation = (1 - easedIn) * 0.04 - easedOut * 0.035;
+                clipProgress = easedIn;
+            } else if (sceneIdx === 2) {
+                // SCENE 03: MIYABI (0.50 -> 1.00) — Signature macro zoom-out + glide left for Contact
+                const inT = clamp((p - 0.50) / 0.22, 0, 1);
+                const easedIn = easeOutQuart(inT);
+                scale = lerp(4.6, 1.0, easedIn);
+                opacity = easeOutCubic(inT);
+
+                if (p > 0.80) {
+                    const slideT = easeInOutCubic(clamp((p - 0.80) / 0.18, 0, 1));
+                    const shiftX = viewW < 900 ? 0 : viewW * 0.23;
+                    tx = viewW / 2 - slideT * shiftX;
+                    ty = viewH / 2 - (viewW < 900 ? slideT * viewH * 0.12 : 0);
+                    scale *= (1 - slideT * 0.24);
+                    opacity = viewW < 900 ? (1 - slideT * 0.55) : 1;
+                }
+            }
+
+            // Gentle 3D mouse parallax offset
+            const parallaxStrength = 14 * opacity;
+            tx += pointer.smoothNormX * parallaxStrength;
+            ty += pointer.smoothNormY * (parallaxStrength * 0.65);
+
+            return { scale, opacity, tx, ty, sw: settledW, sh: settledH, rotation, clipProgress };
+        }
+
+        // ============================================
+        // FLUID CONTINUOUS BRUSH PAINTING
+        // ============================================
+        function dabBrush(scene, params, x, y) {
+            const paintX = (x - params.tx) / params.scale + params.sw / 2;
+            const paintY = (y - params.ty) / params.scale + params.sh / 2;
+
+            // Only paint if near the artwork bounds
+            const r = BRUSH_RADIUS / params.scale;
+            if (paintX < -r || paintX > params.sw + r || paintY < -r || paintY > params.sh + r) {
+                return false;
+            }
+
+            const mCtx = scene.maskCtx;
+            const grad = mCtx.createRadialGradient(paintX, paintY, r * 0.15, paintX, paintY, r);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+            grad.addColorStop(0.55, 'rgba(255, 255, 255, 0.08)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            mCtx.globalCompositeOperation = 'source-over';
+            mCtx.fillStyle = grad;
+            mCtx.beginPath();
+            mCtx.arc(paintX, paintY, r, 0, Math.PI * 2);
+            mCtx.fill();
+
+            // Estimate reveal increment
+            scene.revealProgress = Math.min(100, scene.revealProgress + 0.14);
+            return true;
+        }
+
+        function handlePaintMove(clientX, clientY) {
+            pointer.x = clientX;
+            pointer.y = clientY;
+            pointer.normX = (clientX / window.innerWidth - 0.5) * 2;
+            pointer.normY = (clientY / window.innerHeight - 0.5) * 2;
+            pointer.active = true;
+
+            if (!loaded || inContactMode) return;
+
+            const scene = sceneData[activeSceneIndex];
+            const params = getViewParams(activeSceneIndex, smoothScroll);
+            if (params.opacity < 0.25) return;
+
+            // Interpolate points between last and current mouse position for silky strokes
+            const startX = pointer.lastPaintX ?? clientX;
+            const startY = pointer.lastPaintY ?? clientY;
+            const dist = Math.hypot(clientX - startX, clientY - startY);
+            const steps = Math.max(1, Math.min(18, Math.ceil(dist / 10)));
+
+            let paintedAny = false;
+            for (let i = 1; i <= steps; i++) {
+                const t = i / steps;
+                const ix = lerp(startX, clientX, t);
+                const iy = lerp(startY, clientY, t);
+                if (dabBrush(scene, params, ix, iy)) {
+                    paintedAny = true;
+                }
+            }
+
+            if (paintedAny) {
+                document.body.classList.add('cursor-painting');
+                if (Math.random() < 0.35) spawnParticle(clientX, clientY);
+            } else {
+                document.body.classList.remove('cursor-painting');
+            }
+
+            pointer.lastPaintX = clientX;
+            pointer.lastPaintY = clientY;
+        }
+
+        window.addEventListener('mousemove', e => handlePaintMove(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if (e.touches.length > 0) {
+                handlePaintMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+        window.addEventListener('touchend', () => {
+            pointer.lastPaintX = null;
+            pointer.lastPaintY = null;
+        });
+
+        // ============================================
+        // BLOOM REVEAL & RESET INK TRANSITION BUTTONS
+        // ============================================
+        document.getElementById('btn-bloom').addEventListener('click', () => {
+            const scene = sceneData[activeSceneIndex];
+            scene.bloomActive = true;
+            scene.bloomRadius = 10;
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            const scene = sceneData[activeSceneIndex];
+            scene.bloomActive = false;
+            scene.maskCtx.clearRect(0, 0, scene.maskCanvas.width, scene.maskCanvas.height);
+            scene.revealProgress = 0;
+        });
+
+        // ============================================
+        // UI CHAPTER TRANSITIONS
+        // ============================================
+        let displayedPlacardIdx = 0;
+
+        function updateChapterUI(p) {
+            const newIdx = p < 0.28 ? 0 : p < 0.58 ? 1 : 2;
+            const nowContact = p > 0.83;
+
+            if (newIdx !== activeSceneIndex) {
+                activeSceneIndex = newIdx;
+                pointer.lastPaintX = null;
+                pointer.lastPaintY = null;
+            }
+
+            if (displayedPlacardIdx !== activeSceneIndex) {
+                displayedPlacardIdx = activeSceneIndex;
+                const sc = sceneData[activeSceneIndex];
+                placardTitle.classList.add('switching');
+                placardSubtitle.classList.add('switching');
+                setTimeout(() => {
+                    placardIndex.textContent = sc.index;
+                    placardTitle.textContent = sc.title;
+                    placardSubtitle.textContent = sc.subtitle;
+                    placardTitle.classList.remove('switching');
+                    placardSubtitle.classList.remove('switching');
+                }, 260);
+            }
+
+            // Update rail active dot
+            const activeRailIdx = nowContact ? 3 : activeSceneIndex;
+            chapterButtons.forEach((btn, i) => {
+                btn.classList.toggle('active', i === activeRailIdx);
+            });
+
+            // Update reveal meter for active artwork
+            const pct = Math.round(sceneData[activeSceneIndex].revealProgress);
+            revealBarFill.style.width = `${pct}%`;
+            revealPct.textContent = `${pct}% Revealed`;
+
+            // Toggle contact finale & placard visibility
+            if (nowContact !== inContactMode) {
+                inContactMode = nowContact;
+                placard.classList.toggle('placard-hidden', inContactMode);
+                canvasControls.classList.toggle('controls-hidden', inContactMode);
+                contactCards.forEach(c => c.classList.toggle('is-visible', inContactMode));
+                backToTopBtn.classList.toggle('is-visible', inContactMode);
+                contactEyebrow.style.opacity = inContactMode ? '1' : '0';
+                contactEyebrow.style.transform = inContactMode ? 'translateX(0)' : 'translateX(48px)';
+
+                if (inContactMode) {
+                    hint.textContent = 'Connect with Lumina';
+                    hint.style.color = '#1a1917';
+                    document.body.classList.remove('cursor-painting');
+                } else {
+                    hint.textContent = sceneData[activeSceneIndex].hint;
+                    hint.style.color = 'rgba(26, 25, 23, 0.42)';
+                }
+            } else if (!inContactMode) {
+                hint.textContent = sceneData[activeSceneIndex].hint;
+            }
+        }
+
+        // ============================================
+        // RENDERING LOOP
+        // ============================================
+        function drawScene(sceneIdx, p) {
+            const scene = sceneData[sceneIdx];
+            const params = getViewParams(sceneIdx, p);
+            if (params.opacity <= 0.004) return;
+
+            // Handle animated watercolor bloom reveal
+            if (scene.bloomActive) {
+                const maxR = Math.hypot(scene.maskCanvas.width, scene.maskCanvas.height) * 0.65;
+                scene.bloomRadius += Math.max(14, maxR * 0.045);
+                const cx = scene.maskCanvas.width / 2;
+                const cy = scene.maskCanvas.height / 2;
+                const mCtx = scene.maskCtx;
+                const grad = mCtx.createRadialGradient(cx, cy, scene.bloomRadius * 0.6, cx, cy, scene.bloomRadius);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+                grad.addColorStop(0.75, 'rgba(255, 255, 255, 0.18)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                mCtx.fillStyle = grad;
+                mCtx.beginPath();
+                mCtx.arc(cx, cy, scene.bloomRadius, 0, Math.PI * 2);
+                mCtx.fill();
+
+                scene.revealProgress = Math.min(100, (scene.bloomRadius / maxR) * 100);
+                if (scene.bloomRadius >= maxR * 1.35) {
+                    mCtx.fillStyle = '#ffffff';
+                    mCtx.fillRect(0, 0, scene.maskCanvas.width, scene.maskCanvas.height);
+                    scene.revealProgress = 100;
+                    scene.bloomActive = false;
+                }
+            }
+
+            if (tempCanvas.width !== scene.maskCanvas.width || tempCanvas.height !== scene.maskCanvas.height) {
+                tempCanvas.width = scene.maskCanvas.width;
+                tempCanvas.height = scene.maskCanvas.height;
+            }
 
             ctx.save();
             ctx.translate(params.tx, params.ty);
+            ctx.rotate(params.rotation);
             ctx.scale(params.scale, params.scale);
             ctx.translate(-params.sw / 2, -params.sh / 2);
             ctx.globalAlpha = params.opacity;
 
-            ctx.drawImage(lineImg, 0, 0, params.sw, params.sh);
+            // Optional soft architectural clip reveal for Scene 02 entrance
+            if (params.clipProgress < 0.999) {
+                const insetY = (1 - params.clipProgress) * (params.sh * 0.18);
+                ctx.beginPath();
+                ctx.rect(0, insetY, params.sw, params.sh - insetY * 2);
+                ctx.clip();
+            }
 
-            const targetMask = isMiyabi ? mask2Canvas : mask1Canvas;
-            
+            // 1. Draw base monochrome line art
+            ctx.drawImage(scene.lineImg, 0, 0, params.sw, params.sh);
+
+            // 2. Composite painted color mask
             tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.drawImage(targetMask, 0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(scene.maskCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
             tempCtx.globalCompositeOperation = 'source-in';
-            tempCtx.drawImage(colorImg, 0, 0, params.sw, params.sh);
+            tempCtx.drawImage(scene.colorImg, 0, 0, tempCanvas.width, tempCanvas.height);
             tempCtx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(tempCanvas, 0, 0);
+            ctx.drawImage(tempCanvas, 0, 0, params.sw, params.sh);
 
             ctx.restore();
         }
 
+        function drawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life++;
+                const progress = pt.life / pt.maxLife;
+                const a = pt.alpha * (1 - progress);
+                if (progress >= 1) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.globalAlpha = a;
+                ctx.fillStyle = pt.warm ? '#a67c52' : '#2a2825';
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.size * (1 - progress * 0.4), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
         function animate() {
             if (!loaded) return;
+
+            // Smooth inertial scroll interpolation
+            const prevScroll = smoothScroll;
+            smoothScroll = lerp(smoothScroll, targetScroll, 0.085);
+            if (Math.abs(targetScroll - smoothScroll) < 0.00005) smoothScroll = targetScroll;
+            scrollVelocity = (smoothScroll - prevScroll) * 180;
+
+            // Smooth mouse parallax & cursor ring follow
+            pointer.smoothNormX = lerp(pointer.smoothNormX, pointer.normX, 0.07);
+            pointer.smoothNormY = lerp(pointer.smoothNormY, pointer.normY, 0.07);
+            pointer.ringX = lerp(pointer.ringX, pointer.x, 0.18);
+            pointer.ringY = lerp(pointer.ringY, pointer.y, 0.18);
+
+            cursorDot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0) translate(-50%, -50%)`;
+            cursorBrush.style.transform = `translate3d(${pointer.ringX}px, ${pointer.ringY}px, 0) translate(-50%, -50%)`;
+
+            // Top scroll progress line
+            scrollProgressLine.style.width = `${smoothScroll * 100}%`;
+
+            // Velocity-reactive marquee ticker
+            const baseSpeed = 0.65;
+            tickerOffset -= baseSpeed + scrollVelocity * 2.4;
+            const halfWidth = tickerWrap.scrollWidth / 2 || 1000;
+            if (tickerOffset <= -halfWidth) tickerOffset += halfWidth;
+            if (tickerOffset > 0) tickerOffset -= halfWidth;
+            tickerWrap.style.transform = `translate3d(${tickerOffset}px, 0, 0)`;
+
+            // Update chapter HUD & contact state
+            updateChapterUI(smoothScroll);
+
+            // Render canvas layers
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawArt(images.s1Color, images.s1Line, scrollProgress, false);
-            drawArt(images.s2Color, images.s2Line, scrollProgress, true);
+            for (let i = 0; i < sceneData.length; i++) {
+                drawScene(i, smoothScroll);
+            }
+            drawParticles();
+
             requestAnimationFrame(animate);
         }
     </script>

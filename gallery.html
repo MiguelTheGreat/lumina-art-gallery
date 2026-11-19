@@ -3,293 +3,1020 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina. | Gallery</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Lumina. | Exhibition Gallery</title>
+    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse, Minju, and Miyabi — with interactive line-art to color reveals and fullscreen comparison inspection.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+        :root {
+            --bg-paper: #f5f2e9;
+            --bg-paper-focus: #fcfaf4;
+            --ink-primary: #1a1917;
+            --ink-secondary: #5c5850;
+            --accent-warm: #a67c52;
+            --border-subtle: rgba(26, 25, 23, 0.08);
+            --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
+        }
 
-        /* --- GLOBAL RESET --- */
-        * { scrollbar-width: none; -ms-overflow-style: none; }
+        * {
+            box-sizing: border-box;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
         *::-webkit-scrollbar { display: none; }
 
-        body {
-            background-color: #f5f2e9;
+        html, body {
+            background-color: var(--bg-paper);
+            color: var(--ink-primary);
             margin: 0;
+            padding: 0;
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* --- LOADING OVERLAY --- */
+        /* Museum paper texture */
+        .paper-grain {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 90;
+            opacity: 0.045;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* ============================================
+           SPLIT-CURTAIN INTRO & PAGE TRANSITION
+           ============================================ */
         #intro-overlay {
             position: fixed;
             inset: 0;
-            background-color: #f5f2e9; 
             z-index: 9999;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: all;
+            overflow: hidden;
         }
+
+        .curtain-panel {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 25.2%;
+            background-color: #161513;
+            transform: scaleY(1);
+            transform-origin: top center;
+            transition: transform 1.05s var(--ease-expo);
+            will-change: transform;
+        }
+
+        .curtain-panel:nth-child(1) { left: 0%; transition-delay: 0.04s; }
+        .curtain-panel:nth-child(2) { left: 25%; transition-delay: 0.11s; }
+        .curtain-panel:nth-child(3) { left: 50%; transition-delay: 0.18s; }
+        .curtain-panel:nth-child(4) { left: 75%; transition-delay: 0.25s; }
+
+        #intro-overlay.curtain-open {
+            pointer-events: none;
+        }
+
+        #intro-overlay.curtain-open .curtain-panel {
+            transform: scaleY(0);
+            transform-origin: top center;
+        }
+
+        #intro-overlay.curtain-closing {
+            pointer-events: all;
+        }
+
+        #intro-overlay.curtain-closing .curtain-panel {
+            transform: scaleY(1);
+            transform-origin: bottom center;
+        }
+
+        .intro-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            transition: opacity 0.5s var(--ease-quart), transform 0.65s var(--ease-expo);
+        }
+
+        #intro-overlay.curtain-open .intro-content {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.96);
+        }
+
+        .intro-mask { overflow: hidden; padding: 0.15rem 0; }
 
         #intro-text {
             font-family: 'Syncopate', sans-serif;
             font-weight: 700;
-            font-size: 3rem;
-            letter-spacing: 0.2em;
+            font-size: clamp(1.9rem, 5vw, 3.2rem);
+            letter-spacing: 0.28em;
             text-transform: uppercase;
-            color: #1a1a1a;
-            opacity: 0;
-            animation: introSequence 2.5s forwards;
+            color: var(--bg-paper);
+            margin: 0;
+            transform: translateY(115%);
+            animation: revealUp 0.95s var(--ease-expo) 0.12s forwards;
         }
 
         #intro-subtext {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 0.3em;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(0.95rem, 1.8vw, 1.25rem);
+            letter-spacing: 0.2em;
+            color: rgba(245, 242, 233, 0.7);
+            margin-top: 0.75rem;
+            transform: translateY(115%);
+            animation: revealUp 0.9s var(--ease-expo) 0.3s forwards;
+        }
+
+        @keyframes revealUp { to { transform: translateY(0%); } }
+
+        /* ============================================
+           CUSTOM MAGNETIC CURSOR
+           ============================================ */
+        #cursor-ring,
+        #cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 500;
+            transform: translate(-50%, -50%);
+            will-change: transform, width, height;
+        }
+
+        #cursor-dot {
+            width: 5px;
+            height: 5px;
+            background: var(--ink-primary);
+            transition: opacity 0.3s ease;
+        }
+
+        #cursor-ring {
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(26, 25, 23, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.48rem;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: #555;
-            margin-top: 1rem;
-            opacity: 0;
-            animation: introSequence 2.5s forwards;
-            animation-delay: 0.2s; 
+            color: var(--bg-paper);
+            transition: width 0.4s var(--ease-expo), height 0.4s var(--ease-expo),
+                        background-color 0.35s ease, border-color 0.35s ease, opacity 0.3s ease;
         }
 
-        @keyframes introSequence {
-            0% { opacity: 0; transform: translateY(20px); }
-            30%, 80% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-10px); }
+        body.cursor-inspect #cursor-ring {
+            width: 78px;
+            height: 78px;
+            background: rgba(26, 25, 23, 0.88);
+            border-color: var(--ink-primary);
         }
 
-        .overlay-hidden { opacity: 0 !important; pointer-events: none !important; }
+        body.cursor-inspect #cursor-dot { opacity: 0; }
 
-        /* --- NAVIGATION --- */
+        body.cursor-link #cursor-ring {
+            width: 50px;
+            height: 50px;
+            border-color: var(--ink-primary);
+            background: rgba(26, 25, 23, 0.06);
+        }
+
+        body.cursor-hidden #cursor-ring,
+        body.cursor-hidden #cursor-dot { opacity: 0; }
+
+        /* ============================================
+           NAVIGATION
+           ============================================ */
         .nav {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            padding: 2.5rem;
+            padding: clamp(1.25rem, 3vw, 2.25rem);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 50;
-            pointer-events: none; /* Allows clicks to pass through empty areas */
+            z-index: 60;
+            pointer-events: none;
             opacity: 0;
-            animation: fadeInNav 1s ease-out 2.5s forwards;
+            transform: translateY(-14px);
+            transition: opacity 0.9s var(--ease-expo) 0.35s, transform 0.9s var(--ease-expo) 0.35s;
         }
 
-        @keyframes fadeInNav { to { opacity: 1; } }
+        body.gallery-ready .nav {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-        /* Brand Styling */
         .brand {
             pointer-events: auto;
             font-family: 'Syncopate', sans-serif;
             font-weight: 700;
-            letter-spacing: 0.3em;
-            font-size: 1.25rem;
+            letter-spacing: 0.32em;
+            font-size: 1.15rem;
             text-transform: uppercase;
-            color: #1a1a1a;
+            color: var(--ink-primary);
             text-decoration: none;
-            position: relative;
+            transition: letter-spacing 0.5s var(--ease-expo);
         }
 
-        /* --- YOUR CUSTOM MENU ITEM --- */
+        .brand:hover { letter-spacing: 0.4em; }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            pointer-events: auto;
+        }
+
+        .nav-hint {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 0.98rem;
+            color: var(--ink-secondary);
+            letter-spacing: 0.06em;
+        }
+
         .menu-item {
-            pointer-events: auto; /* Required to make it clickable over the gallery */
+            pointer-events: auto;
             font-family: 'Syncopate', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 0.15em;
+            font-size: 0.7rem;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: #1a1a1a;
+            color: var(--ink-primary);
             text-decoration: none;
             cursor: pointer;
             position: relative;
+            padding: 0.35rem 0;
         }
 
         .menu-item::after {
             content: '';
             position: absolute;
-            bottom: -4px;
+            bottom: 0;
             left: 0;
-            width: 0%;
+            width: 100%;
             height: 1px;
-            background: #1a1a1a;
-            transition: width 0.3s ease;
+            background: var(--ink-primary);
+            transform: scaleX(0);
+            transform-origin: right center;
+            transition: transform 0.45s var(--ease-expo);
         }
 
         .menu-item:hover::after {
-            width: 100%;
+            transform: scaleX(1);
+            transform-origin: left center;
         }
 
-        /* --- MAIN WRAPPER --- */
-        /* Renamed to avoid Tailwind .container conflict */
+        /* ============================================
+           ACCORDION EXHIBITION STRIPS
+           ============================================ */
         .gallery-wrapper {
             display: flex;
             width: 100vw;
             height: 100vh;
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             z-index: 10;
         }
 
-        /* --- THE STRIP --- */
         .gallery-strip {
             position: relative;
             flex: 1;
             height: 100%;
-            border-right: 1px solid rgba(0,0,0,0.05);
-            transition: flex 0.8s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.8s ease;
+            border-right: 1px solid var(--border-subtle);
+            transition: flex 0.9s var(--ease-expo),
+                        background-color 0.75s ease,
+                        opacity 0.6s ease;
             cursor: pointer;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
+            clip-path: inset(100% 0 0 0);
         }
 
-        .gallery-strip:hover { 
-            flex: 2.5; 
-            background-color: #fcfbf7; 
+        body.gallery-ready .gallery-strip {
+            clip-path: inset(0% 0 0 0);
+            transition: flex 0.9s var(--ease-expo),
+                        background-color 0.75s ease,
+                        opacity 0.6s ease,
+                        clip-path 1.05s var(--ease-expo);
         }
 
-        /* --- THE INNER CARD --- */
+        .gallery-strip:nth-child(1) { transition-delay: 0s, 0s, 0s, 0.08s; }
+        .gallery-strip:nth-child(2) { transition-delay: 0s, 0s, 0s, 0.2s; }
+        .gallery-strip:nth-child(3) { transition-delay: 0s, 0s, 0s, 0.32s; border-right: none; }
+
+        /* When hovering any strip, gently recede siblings */
+        .gallery-wrapper:hover .gallery-strip:not(:hover) {
+            flex: 0.75;
+            opacity: 0.62;
+        }
+
+        .gallery-strip:hover {
+            flex: 2.35;
+            background-color: var(--bg-paper-focus);
+            opacity: 1 !important;
+        }
+
+        /* Top-right ambient index watermark */
+        .strip-watermark {
+            position: absolute;
+            top: 6.2rem;
+            right: 2rem;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.28em;
+            color: rgba(26, 25, 23, 0.28);
+            z-index: 20;
+            transition: color 0.5s ease, transform 0.7s var(--ease-expo);
+            pointer-events: none;
+        }
+
+        .gallery-strip:hover .strip-watermark {
+            color: var(--accent-warm);
+            transform: translateY(-4px);
+        }
+
+        /* Art stage with 3D parallax */
         .art-card {
             position: relative;
             width: 100%;
-            height: 80%;
+            height: 76%;
             display: flex;
             justify-content: center;
             align-items: center;
             pointer-events: none;
+            transform-style: preserve-3d;
+            transition: transform 0.65s var(--ease-expo);
+            will-change: transform;
         }
 
-        /* --- ART LAYERS --- */
         .art-layer {
             position: absolute;
-            max-width: 85%;
+            max-width: 84%;
             max-height: 100%;
             width: auto;
             height: auto;
             object-fit: contain;
-            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            will-change: transform;
+            transition: opacity 0.85s var(--ease-expo),
+                        transform 0.9s var(--ease-expo),
+                        filter 0.7s ease;
+            will-change: transform, opacity, clip-path;
         }
 
-        .line-art { 
-            opacity: 1; 
-            z-index: 1; 
-            filter: grayscale(100%) contrast(1.1); 
+        .line-art {
+            opacity: 0.92;
+            z-index: 1;
+            filter: grayscale(100%) contrast(1.08);
         }
 
-        .color-art { 
-            opacity: 0; 
-            z-index: 2; 
+        .color-art {
+            opacity: 0;
+            z-index: 2;
+            clip-path: circle(0% at var(--mx, 50%) var(--my, 50%));
+            transition: opacity 0.65s ease,
+                        transform 0.9s var(--ease-expo),
+                        clip-path 0.95s var(--ease-expo);
         }
 
-        .gallery-strip:hover .color-art { opacity: 1; }
-        .gallery-strip:hover .art-layer { transform: scale(1.05); }
+        .gallery-strip:hover .color-art {
+            opacity: 1;
+            clip-path: circle(145% at var(--mx, 50%) var(--my, 50%));
+        }
 
-        /* --- CARD INFO --- */
+        .gallery-strip:hover .art-layer {
+            transform: scale(1.05);
+        }
+
+        /* Card Info with masked reveal */
         .card-info {
             position: absolute;
-            bottom: 4rem;
-            left: 3rem;
+            bottom: 3rem;
+            left: 2.4rem;
+            right: 2.4rem;
             z-index: 20;
-            opacity: 0.4;
-            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .card-index {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.58rem;
+            letter-spacing: 0.25em;
+            color: var(--accent-warm);
+            opacity: 0.65;
+            transition: opacity 0.4s ease, transform 0.6s var(--ease-expo);
+        }
+
+        .card-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(1rem, 1.8vw, 1.35rem);
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--ink-primary);
+            margin: 0;
+            opacity: 0.55;
+            transition: opacity 0.5s ease, transform 0.65s var(--ease-expo), letter-spacing 0.65s var(--ease-expo);
+        }
+
+        .card-meta {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1rem;
+            color: var(--ink-secondary);
+            margin: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.55s var(--ease-expo), transform 0.65s var(--ease-expo);
+        }
+
+        .card-cta {
+            margin-top: 0.5rem;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.56rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--ink-primary);
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.55s var(--ease-expo) 0.08s, transform 0.65s var(--ease-expo) 0.08s;
+        }
+
+        .gallery-strip:hover .card-index { opacity: 1; transform: translateX(6px); }
+        .gallery-strip:hover .card-title { opacity: 1; transform: translateX(6px); letter-spacing: 0.22em; }
+        .gallery-strip:hover .card-meta { opacity: 1; transform: translateY(0) translateX(6px); }
+        .gallery-strip:hover .card-cta { opacity: 0.85; transform: translateY(0) translateX(6px); }
+
+        /* ============================================
+           INTERACTIVE FULLSCREEN LIGHTBOX + COMPARE SLIDER
+           ============================================ */
+        #lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(20, 19, 17, 0.92);
+            backdrop-filter: blur(18px);
+            opacity: 0;
+            pointer-events: none;
+            clip-path: inset(8% 8% 8% 8% round 12px);
+            transition: opacity 0.55s var(--ease-expo), clip-path 0.7s var(--ease-expo);
+        }
+
+        #lightbox.is-open {
+            opacity: 1;
+            pointer-events: all;
+            clip-path: inset(0% 0% 0% 0% round 0px);
+        }
+
+        .lightbox-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1.75rem clamp(1.25rem, 4vw, 3rem);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--bg-paper);
+            z-index: 10;
+        }
+
+        .lb-title-group {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+        }
+
+        .lb-index {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.68rem;
+            letter-spacing: 0.24em;
+            color: var(--accent-warm);
+        }
+
+        .lb-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(0.95rem, 2vw, 1.35rem);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .lb-close {
+            background: none;
+            border: 1px solid rgba(245, 242, 233, 0.25);
+            color: var(--bg-paper);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 0.6rem 1.2rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s var(--ease-expo);
+        }
+
+        .lb-close:hover {
+            background: var(--bg-paper);
+            color: var(--ink-primary);
+            transform: scale(1.04);
+        }
+
+        /* Compare Stage */
+        .compare-stage {
+            position: relative;
+            width: min(86vw, 1080px);
+            height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            overflow: hidden;
+            transition: opacity 0.35s ease, transform 0.55s var(--ease-expo);
+        }
+
+        .compare-stage.switching {
+            opacity: 0;
+            transform: scale(0.95) translateY(14px);
+        }
+
+        .compare-frame {
+            position: relative;
+            height: 100%;
+            max-width: 100%;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: ew-resize;
+        }
+
+        .compare-frame img {
+            max-height: 70vh;
+            max-width: 82vw;
+            width: auto;
+            height: auto;
+            display: block;
+            pointer-events: none;
+            border-radius: 2px;
+        }
+
+        .compare-line {
+            filter: grayscale(100%) contrast(1.08);
+        }
+
+        .compare-color {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            clip-path: inset(0 50% 0 0);
+        }
+
+        .compare-divider {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1.5px;
+            background: rgba(245, 242, 233, 0.85);
+            pointer-events: none;
+            box-shadow: 0 0 16px rgba(0, 0, 0, 0.45);
+        }
+
+        .compare-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-paper);
+            color: var(--ink-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            letter-spacing: -1px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
             pointer-events: none;
         }
 
-        .gallery-strip:hover .card-info { 
-            opacity: 1; 
-            transform: translateX(10px); 
+        .lightbox-footer {
+            position: absolute;
+            bottom: 1.75rem;
+            left: 0;
+            right: 0;
+            padding: 0 clamp(1.25rem, 4vw, 3rem);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(245, 242, 233, 0.65);
         }
 
-        .card-title { 
-            font-family: 'Syncopate', sans-serif; 
-            font-size: 1.2rem; 
-            font-weight: 700; 
-            color: #1a1a1a; 
-            margin: 0; 
+        .lb-nav-btn {
+            background: none;
+            border: 1px solid rgba(245, 242, 233, 0.2);
+            color: var(--bg-paper);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 0.65rem 1.25rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s var(--ease-expo);
         }
 
-        /* --- MOBILE / PORTRAIT EDGE CASE --- */
+        .lb-nav-btn:hover {
+            background: var(--bg-paper);
+            color: var(--ink-primary);
+            transform: translateY(-2px);
+        }
+
+        .lb-caption {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.05rem;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+
+        /* ============================================
+           MOBILE / PORTRAIT
+           ============================================ */
         @media (max-width: 768px) or (orientation: portrait) {
+            .nav-hint { display: none; }
             .gallery-wrapper { flex-direction: column; }
-            
-            .gallery-strip { 
-                width: 100%; 
-                border-right: none; 
-                border-bottom: 1px solid rgba(0,0,0,0.05); 
+            .gallery-strip {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-subtle);
             }
-            
-            .gallery-strip:hover { flex: 1.5; }
-            .card-info { bottom: 2rem; left: 2rem; }
-            .art-card { height: 60%; }
+            .gallery-strip:hover { flex: 1.8; }
+            .card-info { bottom: 1.4rem; left: 1.5rem; }
+            .art-card { height: 68%; }
+            .strip-watermark { top: 1.2rem; right: 1.5rem; }
+            .lb-caption { display: none; }
+        }
+
+        @media (hover: none) {
+            #cursor-ring, #cursor-dot { display: none; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .gallery-strip, .art-layer { transition: none !important; transform: none !important; }
-            #intro-overlay { display: none; }
-            .nav { opacity: 1; }
+            .curtain-panel, .gallery-strip, .art-layer, #lightbox {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="paper-grain" aria-hidden="true"></div>
 
+    <!-- Split-Curtain Intro / Page Transition -->
     <div id="intro-overlay">
-        <div id="intro-text">Lumina.</div>
-        <div id="intro-subtext">Art Gallery Experience Redefined.</div>
+        <div class="curtain-panel"></div>
+        <div class="curtain-panel"></div>
+        <div class="curtain-panel"></div>
+        <div class="curtain-panel"></div>
+        <div class="intro-content" id="intro-content">
+            <div class="intro-mask"><h1 id="intro-text">Gallery.</h1></div>
+            <div class="intro-mask"><div id="intro-subtext">Curated Works — Hover to Reveal, Click to Inspect</div></div>
+        </div>
     </div>
 
-    <nav class="nav">
-        <a href="AdrianArtReimagined.html" class="brand transition-link">Lumina.</a>
-        
-        <a href="AdrianArtReimagined.html" class="menu-item transition-link">Back to Experience</a>
+    <div id="cursor-ring" aria-hidden="true"><span id="cursor-label"></span></div>
+    <div id="cursor-dot" aria-hidden="true"></div>
+
+    <nav class="nav" aria-label="Gallery Navigation">
+        <a href="AdrianArtReimagined.html" class="brand transition-link link-target">Lumina.</a>
+        <div class="nav-right">
+            <span class="nav-hint">Hover to unveil · Click to compare</span>
+            <a href="AdrianArtReimagined.html" class="menu-item transition-link link-target">Back to Experience</a>
+        </div>
     </nav>
 
-    <div class="gallery-wrapper">
-        <div class="gallery-strip">
+    <main class="gallery-wrapper" id="gallery-wrapper">
+        <article class="gallery-strip" data-index="0">
+            <span class="strip-watermark">01</span>
             <div class="art-card">
                 <img src="glimpse_1.png" class="art-layer line-art" alt="Glimpse Sketch">
                 <img src="glimpse.png" class="art-layer color-art" alt="Glimpse Color">
             </div>
-            <div class="card-info"><h2 class="card-title">Glimpse</h2></div>
-        </div>
+            <div class="card-info">
+                <span class="card-index">01 / 03</span>
+                <h2 class="card-title">Glimpse</h2>
+                <p class="card-meta">Digital Ink &amp; Chromatic Study</p>
+                <span class="card-cta">Click to Inspect →</span>
+            </div>
+        </article>
 
-        <div class="gallery-strip">
+        <article class="gallery-strip" data-index="1">
+            <span class="strip-watermark">02</span>
+            <div class="art-card">
+                <img src="minju_line_art.png" class="art-layer line-art" alt="Minju Sketch">
+                <img src="minju_colored.png" class="art-layer color-art" alt="Minju Color">
+            </div>
+            <div class="card-info">
+                <span class="card-index">02 / 03</span>
+                <h2 class="card-title">Minju</h2>
+                <p class="card-meta">Portrait in Light &amp; Line</p>
+                <span class="card-cta">Click to Inspect →</span>
+            </div>
+        </article>
+
+        <article class="gallery-strip" data-index="2">
+            <span class="strip-watermark">03</span>
             <div class="art-card">
                 <img src="miyabi.png" class="art-layer line-art" alt="Miyabi Sketch">
                 <img src="miyabi 2.png" class="art-layer color-art" alt="Miyabi Color">
             </div>
-            <div class="card-info"><h2 class="card-title">Miyabi</h2></div>
+            <div class="card-info">
+                <span class="card-index">03 / 03</span>
+                <h2 class="card-title">Miyabi</h2>
+                <p class="card-meta">Cinematic Panorama Composition</p>
+                <span class="card-cta">Click to Inspect →</span>
+            </div>
+        </article>
+    </main>
+
+    <!-- Fullscreen Lightbox with Interactive Sketch-to-Color Wipe Slider -->
+    <div id="lightbox" role="dialog" aria-modal="true" aria-label="Artwork Inspection">
+        <div class="lightbox-header">
+            <div class="lb-title-group">
+                <span class="lb-index" id="lb-index">01 / 03</span>
+                <h2 class="lb-title" id="lb-title">Glimpse</h2>
+            </div>
+            <button class="lb-close link-target" id="lb-close">Close [ESC]</button>
+        </div>
+
+        <div class="compare-stage" id="compare-stage">
+            <div class="compare-frame" id="compare-frame">
+                <img id="lb-line" class="compare-line" src="glimpse_1.png" alt="Line art version">
+                <img id="lb-color" class="compare-color" src="glimpse.png" alt="Colored version">
+                <div class="compare-divider" id="compare-divider">
+                    <div class="compare-handle">◀ ▶</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lightbox-footer">
+            <button class="lb-nav-btn link-target" id="lb-prev">← Prev</button>
+            <div class="lb-caption" id="lb-caption">Drag across the canvas to compare Line Art &amp; Full Color</div>
+            <button class="lb-nav-btn link-target" id="lb-next">Next →</button>
         </div>
     </div>
 
     <script>
+        const ARTWORKS = [
+            {
+                index: '01 / 03',
+                title: 'Glimpse',
+                subtitle: 'Digital Ink & Chromatic Study',
+                line: 'glimpse_1.png',
+                color: 'glimpse.png'
+            },
+            {
+                index: '02 / 03',
+                title: 'Minju',
+                subtitle: 'Portrait in Light & Line',
+                line: 'minju_line_art.png',
+                color: 'minju_colored.png'
+            },
+            {
+                index: '03 / 03',
+                title: 'Miyabi',
+                subtitle: 'Cinematic Panorama Composition',
+                line: 'miyabi.png',
+                color: 'miyabi 2.png'
+            }
+        ];
+
         const overlay = document.getElementById('intro-overlay');
+        const introContent = document.getElementById('intro-content');
+        const cursorRing = document.getElementById('cursor-ring');
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorLabel = document.getElementById('cursor-label');
+        const strips = document.querySelectorAll('.gallery-strip');
+
+        // ============================================
+        // SPLIT-CURTAIN INTRO & EXIT TRANSITIONS
+        // ============================================
+        function openCurtain() {
+            overlay.classList.add('curtain-open');
+            document.body.classList.add('gallery-ready');
+        }
 
         window.addEventListener('load', () => {
-            setTimeout(() => overlay.classList.add('overlay-hidden'), 2300);
+            setTimeout(openCurtain, 1350);
         });
 
         window.addEventListener('pageshow', (e) => {
-            if (e.persisted) overlay.classList.add('overlay-hidden');
+            if (e.persisted) {
+                overlay.classList.remove('curtain-closing');
+                openCurtain();
+            }
         });
 
         document.querySelectorAll('.transition-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const target = link.href;
-                document.getElementById('intro-text').style.opacity = '0';
-                document.getElementById('intro-subtext').style.opacity = '0';
-                overlay.classList.remove('overlay-hidden');
-                setTimeout(() => window.location.href = target, 800);
+                introContent.style.opacity = '0';
+                overlay.classList.remove('curtain-open');
+                overlay.classList.add('curtain-closing');
+                setTimeout(() => { window.location.href = target; }, 850);
             });
         });
+
+        // ============================================
+        // MAGNETIC CURSOR TRACKING
+        // ============================================
+        const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2, rx: window.innerWidth / 2, ry: window.innerHeight / 2 };
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        document.addEventListener('mouseleave', () => document.body.classList.add('cursor-hidden'));
+        document.addEventListener('mouseenter', () => document.body.classList.remove('cursor-hidden'));
+
+        document.querySelectorAll('.link-target').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                document.body.classList.remove('cursor-inspect');
+                document.body.classList.add('cursor-link');
+                cursorLabel.textContent = '';
+            });
+            el.addEventListener('mouseleave', () => {
+                document.body.classList.remove('cursor-link');
+            });
+        });
+
+        function animateCursor() {
+            mouse.rx += (mouse.x - mouse.rx) * 0.16;
+            mouse.ry += (mouse.y - mouse.ry) * 0.16;
+            cursorDot.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0) translate(-50%, -50%)`;
+            cursorRing.style.transform = `translate3d(${mouse.rx}px, ${mouse.ry}px, 0) translate(-50%, -50%)`;
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // ============================================
+        // STRIP HOVER: RADIAL REVEAL ORIGIN & 3D PARALLAX
+        // ============================================
+        strips.forEach(strip => {
+            const artCard = strip.querySelector('.art-card');
+            const colorArt = strip.querySelector('.color-art');
+
+            strip.addEventListener('mouseenter', (e) => {
+                const rect = strip.getBoundingClientRect();
+                const mx = ((e.clientX - rect.left) / rect.width) * 100;
+                const my = ((e.clientY - rect.top) / rect.height) * 100;
+                colorArt.style.setProperty('--mx', `${mx}%`);
+                colorArt.style.setProperty('--my', `${my}%`);
+
+                document.body.classList.add('cursor-inspect');
+                cursorLabel.textContent = 'VIEW';
+            });
+
+            strip.addEventListener('mousemove', (e) => {
+                const rect = strip.getBoundingClientRect();
+                const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+                const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+                artCard.style.transform = `perspective(900px) rotateY(${nx * 4.5}deg) rotateX(${-ny * 4.5}deg) translate3d(${nx * 8}px, ${ny * 6}px, 0)`;
+            });
+
+            strip.addEventListener('mouseleave', () => {
+                artCard.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) translate3d(0, 0, 0)';
+                document.body.classList.remove('cursor-inspect');
+                cursorLabel.textContent = '';
+            });
+
+            strip.addEventListener('click', () => {
+                openLightbox(parseInt(strip.dataset.index, 10));
+            });
+        });
+
+        // ============================================
+        // LIGHTBOX & INTERACTIVE COMPARE SLIDER
+        // ============================================
+        const lightbox = document.getElementById('lightbox');
+        const compareStage = document.getElementById('compare-stage');
+        const compareFrame = document.getElementById('compare-frame');
+        const lbIndex = document.getElementById('lb-index');
+        const lbTitle = document.getElementById('lb-title');
+        const lbLine = document.getElementById('lb-line');
+        const lbColor = document.getElementById('lb-color');
+        const compareDivider = document.getElementById('compare-divider');
+
+        let currentLightboxIdx = 0;
+        let isDraggingSlider = false;
+
+        function setComparePosition(ratio) {
+            const clamped = Math.max(0, Math.min(1, ratio));
+            const pct = clamped * 100;
+            lbColor.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+            compareDivider.style.left = `${pct}%`;
+        }
+
+        function loadLightboxArtwork(idx, animateSwitch = false) {
+            currentLightboxIdx = (idx + ARTWORKS.length) % ARTWORKS.length;
+            const art = ARTWORKS[currentLightboxIdx];
+
+            const apply = () => {
+                lbIndex.textContent = art.index;
+                lbTitle.textContent = art.title;
+                lbLine.src = art.line;
+                lbColor.src = art.color;
+                setComparePosition(0.5);
+            };
+
+            if (animateSwitch) {
+                compareStage.classList.add('switching');
+                setTimeout(() => {
+                    apply();
+                    compareStage.classList.remove('switching');
+                }, 260);
+            } else {
+                apply();
+            }
+        }
+
+        function openLightbox(idx) {
+            document.body.classList.remove('cursor-inspect');
+            cursorLabel.textContent = '';
+            loadLightboxArtwork(idx, false);
+            lightbox.classList.add('is-open');
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('is-open');
+        }
+
+        document.getElementById('lb-close').addEventListener('click', closeLightbox);
+        document.getElementById('lb-prev').addEventListener('click', () => loadLightboxArtwork(currentLightboxIdx - 1, true));
+        document.getElementById('lb-next').addEventListener('click', () => loadLightboxArtwork(currentLightboxIdx + 1, true));
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('is-open')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') loadLightboxArtwork(currentLightboxIdx - 1, true);
+            if (e.key === 'ArrowRight') loadLightboxArtwork(currentLightboxIdx + 1, true);
+        });
+
+        function updateSliderFromClientX(clientX) {
+            const rect = compareFrame.getBoundingClientRect();
+            const ratio = (clientX - rect.left) / rect.width;
+            setComparePosition(ratio);
+        }
+
+        compareFrame.addEventListener('mousedown', (e) => {
+            isDraggingSlider = true;
+            updateSliderFromClientX(e.clientX);
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (isDraggingSlider) updateSliderFromClientX(e.clientX);
+        });
+        window.addEventListener('mouseup', () => { isDraggingSlider = false; });
+
+        compareFrame.addEventListener('touchstart', (e) => {
+            isDraggingSlider = true;
+            updateSliderFromClientX(e.touches[0].clientX);
+        }, { passive: true });
+        window.addEventListener('touchmove', (e) => {
+            if (isDraggingSlider && e.touches.length > 0) {
+                updateSliderFromClientX(e.touches[0].clientX);
+            }
+        }, { passive: true });
+        window.addEventListener('touchend', () => { isDraggingSlider = false; });
     </script>
 </body>
 </html>
