@@ -912,10 +912,10 @@
 
         <footer class="gallery-footer">
             <div class="ticker-wrap" id="ticker-wrap">
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MINJU • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
             </div>
         </footer>
     </div>
@@ -926,23 +926,19 @@
             <span class="chapter-indicator"></span>
             <span class="chapter-label">01 Glimpse</span>
         </button>
-        <button class="chapter-dot-btn hover-target" data-target="0.40" aria-label="Jump to Minju">
+        <button class="chapter-dot-btn hover-target" data-target="0.60" aria-label="Jump to Miyabi">
             <span class="chapter-indicator"></span>
-            <span class="chapter-label">02 Minju</span>
-        </button>
-        <button class="chapter-dot-btn hover-target" data-target="0.72" aria-label="Jump to Miyabi">
-            <span class="chapter-indicator"></span>
-            <span class="chapter-label">03 Miyabi</span>
+            <span class="chapter-label">02 Miyabi</span>
         </button>
         <button class="chapter-dot-btn hover-target" data-target="1" aria-label="Jump to Contact">
             <span class="chapter-indicator"></span>
-            <span class="chapter-label">04 Contact</span>
+            <span class="chapter-label">03 Contact</span>
         </button>
     </aside>
 
     <!-- Editorial Artwork Placard -->
     <div class="artwork-placard" id="artwork-placard">
-        <div class="placard-index" id="placard-index">01 / 03</div>
+        <div class="placard-index" id="placard-index">01 / 02</div>
         <div class="placard-title-wrap">
             <h2 class="placard-title" id="placard-title">Glimpse</h2>
         </div>
@@ -1008,12 +1004,12 @@
 
     <script>
         // ============================================
-        // ARTWORK CONFIGURATION (All 3 Pieces)
+        // ARTWORK CONFIGURATION
         // ============================================
         const SCENES = [
             {
                 id: 'glimpse',
-                index: '01 / 03',
+                index: '01 / 02',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
                 colorSrc: 'glimpse.png',
@@ -1021,17 +1017,8 @@
                 hint: 'Move Brush to Reveal Glimpse'
             },
             {
-                id: 'minju',
-                index: '02 / 03',
-                title: 'Minju',
-                subtitle: 'Portrait in Light & Line',
-                colorSrc: 'minju_colored.png',
-                lineSrc: 'minju_line_art.png',
-                hint: 'Move Brush to Reveal Minju'
-            },
-            {
                 id: 'miyabi',
-                index: '03 / 03',
+                index: '02 / 02',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
                 colorSrc: 'miyabi 2.png',
@@ -1295,34 +1282,22 @@
             let clipProgress = 1; // 1 = fully visible, 0 = clipped closed
 
             if (sceneIdx === 0) {
-                // SCENE 01: GLIMPSE (0.00 -> 0.32)
-                const outT = clamp((p - 0.14) / 0.18, 0, 1);
+                // SCENE 01: GLIMPSE (0.00 -> 0.45)
+                const outT = clamp((p - 0.14) / 0.31, 0, 1);
                 const easedOut = easeInOutCubic(outT);
                 opacity = 1 - easedOut;
-                scale = 1 - easedOut * 0.24;
+                scale = 1 - easedOut * 0.26;
                 ty = viewH / 2 - easedOut * (viewH * 0.08);
                 rotation = -easedOut * 0.045;
             } else if (sceneIdx === 1) {
-                // SCENE 02: MINJU (0.20 -> 0.62) — Iris / curtain unveil + graceful drift
-                const inT = clamp((p - 0.20) / 0.18, 0, 1);
-                const outT = clamp((p - 0.46) / 0.16, 0, 1);
+                // SCENE 02: MIYABI (0.22 -> 1.00) — Signature macro zoom-out + glide left for Contact
+                const inT = clamp((p - 0.22) / 0.36, 0, 1);
                 const easedIn = easeOutQuart(inT);
-                const easedOut = easeInOutCubic(outT);
-
-                opacity = easedIn * (1 - easedOut);
-                scale = lerp(1.38, 1.0, easedIn) * (1 - easedOut * 0.22);
-                ty = viewH / 2 + (1 - easedIn) * 65 - easedOut * 55;
-                rotation = (1 - easedIn) * 0.04 - easedOut * 0.035;
-                clipProgress = easedIn;
-            } else if (sceneIdx === 2) {
-                // SCENE 03: MIYABI (0.50 -> 1.00) — Signature macro zoom-out + glide left for Contact
-                const inT = clamp((p - 0.50) / 0.22, 0, 1);
-                const easedIn = easeOutQuart(inT);
-                scale = lerp(4.6, 1.0, easedIn);
+                scale = lerp(5.2, 1.0, easedIn);
                 opacity = easeOutCubic(inT);
 
-                if (p > 0.80) {
-                    const slideT = easeInOutCubic(clamp((p - 0.80) / 0.18, 0, 1));
+                if (p > 0.78) {
+                    const slideT = easeInOutCubic(clamp((p - 0.78) / 0.20, 0, 1));
                     const shiftX = viewW < 900 ? 0 : viewW * 0.23;
                     tx = viewW / 2 - slideT * shiftX;
                     ty = viewH / 2 - (viewW < 900 ? slideT * viewH * 0.12 : 0);
@@ -1442,8 +1417,8 @@
         let displayedPlacardIdx = 0;
 
         function updateChapterUI(p) {
-            const newIdx = p < 0.28 ? 0 : p < 0.58 ? 1 : 2;
-            const nowContact = p > 0.83;
+            const newIdx = p < 0.35 ? 0 : 1;
+            const nowContact = p > 0.80;
 
             if (newIdx !== activeSceneIndex) {
                 activeSceneIndex = newIdx;
@@ -1466,7 +1441,7 @@
             }
 
             // Update rail active dot
-            const activeRailIdx = nowContact ? 3 : activeSceneIndex;
+            const activeRailIdx = nowContact ? 2 : activeSceneIndex;
             chapterButtons.forEach((btn, i) => {
                 btn.classList.toggle('active', i === activeRailIdx);
             });

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina. | Exhibition Gallery</title>
-    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse, Minju, and Miyabi — with interactive line-art to color reveals and fullscreen comparison inspection.">
+    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse and Miyabi — with interactive line-art to color reveals and fullscreen comparison inspection.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
@@ -727,7 +727,7 @@
                 <img src="glimpse.png" class="art-layer color-art" alt="Glimpse Color">
             </div>
             <div class="card-info">
-                <span class="card-index">01 / 03</span>
+                <span class="card-index">01 / 02</span>
                 <h2 class="card-title">Glimpse</h2>
                 <p class="card-meta">Digital Ink &amp; Chromatic Study</p>
                 <span class="card-cta">Click to Inspect →</span>
@@ -737,25 +737,11 @@
         <article class="gallery-strip" data-index="1">
             <span class="strip-watermark">02</span>
             <div class="art-card">
-                <img src="minju_line_art.png" class="art-layer line-art" alt="Minju Sketch">
-                <img src="minju_colored.png" class="art-layer color-art" alt="Minju Color">
-            </div>
-            <div class="card-info">
-                <span class="card-index">02 / 03</span>
-                <h2 class="card-title">Minju</h2>
-                <p class="card-meta">Portrait in Light &amp; Line</p>
-                <span class="card-cta">Click to Inspect →</span>
-            </div>
-        </article>
-
-        <article class="gallery-strip" data-index="2">
-            <span class="strip-watermark">03</span>
-            <div class="art-card">
                 <img src="miyabi.png" class="art-layer line-art" alt="Miyabi Sketch">
                 <img src="miyabi 2.png" class="art-layer color-art" alt="Miyabi Color">
             </div>
             <div class="card-info">
-                <span class="card-index">03 / 03</span>
+                <span class="card-index">02 / 02</span>
                 <h2 class="card-title">Miyabi</h2>
                 <p class="card-meta">Cinematic Panorama Composition</p>
                 <span class="card-cta">Click to Inspect →</span>
@@ -767,7 +753,7 @@
     <div id="lightbox" role="dialog" aria-modal="true" aria-label="Artwork Inspection">
         <div class="lightbox-header">
             <div class="lb-title-group">
-                <span class="lb-index" id="lb-index">01 / 03</span>
+                <span class="lb-index" id="lb-index">01 / 02</span>
                 <h2 class="lb-title" id="lb-title">Glimpse</h2>
             </div>
             <button class="lb-close link-target" id="lb-close">Close [ESC]</button>
@@ -793,21 +779,14 @@
     <script>
         const ARTWORKS = [
             {
-                index: '01 / 03',
+                index: '01 / 02',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
                 line: 'glimpse_1.png',
                 color: 'glimpse.png'
             },
             {
-                index: '02 / 03',
-                title: 'Minju',
-                subtitle: 'Portrait in Light & Line',
-                line: 'minju_line_art.png',
-                color: 'minju_colored.png'
-            },
-            {
-                index: '03 / 03',
+                index: '02 / 02',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
                 line: 'miyabi.png',
