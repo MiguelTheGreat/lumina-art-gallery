@@ -40,13 +40,21 @@
         }
         *::-webkit-scrollbar { display: none; }
 
-        html, body {
+        html {
+            background-color: var(--bg-paper);
+            overflow-x: clip;
+            touch-action: pan-y;
+        }
+
+        body {
             background-color: var(--bg-paper);
             color: var(--ink-primary);
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
+            overflow-x: clip;
+            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -230,13 +238,18 @@
             inset: 0;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             z-index: 10;
+            pointer-events: none;
+            touch-action: pan-y;
         }
 
         canvas {
             display: block;
             cursor: none;
+            pointer-events: none;
+            touch-action: pan-y;
         }
 
         /* ============================================
@@ -871,15 +884,56 @@
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
+        .mobile-nav-btn {
+            display: none;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 900px) {
             .chapter-rail { display: none; }
             #hint { display: none; }
-            .artwork-placard { bottom: 4.2rem; max-width: 190px; }
-            .canvas-controls { bottom: 4.2rem; }
-            .ctrl-btn { padding: 0.5rem 0.75rem; font-size: 0.55rem; }
-            #contact-section { justify-content: center; padding-right: 1.25rem; padding-left: 1.25rem; }
-            .contact-stack { align-items: stretch; }
+            .mobile-nav-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 36px;
+                padding: 0.55rem 0.72rem;
+            }
+            .artwork-placard {
+                left: 1rem;
+                right: 1rem;
+                bottom: 7.4rem;
+                max-width: none;
+                background: rgba(245, 242, 233, 0.78);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid var(--border-subtle);
+                border-radius: 10px;
+                padding: 0.72rem 0.9rem;
+            }
+            .placard-title { font-size: 1.05rem; }
+            .placard-subtitle { font-size: 0.88rem; margin: 0.1rem 0 0.4rem; }
+            .canvas-controls {
+                left: 1rem;
+                right: 1rem;
+                bottom: 3.4rem;
+                justify-content: center;
+                gap: 0.45rem;
+                flex-wrap: nowrap;
+            }
+            .ctrl-btn {
+                padding: 0.55rem 0.82rem;
+                font-size: 0.56rem;
+                letter-spacing: 0.12em;
+            }
+            #contact-section {
+                justify-content: center;
+                padding: 5.5rem 1.25rem 4rem;
+            }
+            .contact-stack {
+                align-items: stretch;
+                width: min(100%, 420px);
+            }
         }
 
         @media (hover: none) {
@@ -997,8 +1051,10 @@
 
     <!-- Interactive Brush Controls -->
     <div class="canvas-controls" id="canvas-controls">
+        <button class="ctrl-btn mobile-nav-btn" id="btn-prev-chapter" aria-label="Previous artwork">↑</button>
         <button class="ctrl-btn hover-target" id="btn-bloom" title="Animate watercolor reveal across the artwork">Bloom Reveal</button>
         <button class="ctrl-btn hover-target" id="btn-reset" title="Reset artwork to monochrome line art">Reset Ink</button>
+        <button class="ctrl-btn mobile-nav-btn" id="btn-next-chapter" aria-label="Next artwork">↓</button>
     </div>
 
     <!-- Contact Finale -->
@@ -1791,8 +1847,15 @@
         }
 
         window.addEventListener('mousemove', e => handlePaintMove(e.clientX, e.clientY), { passive: true });
+        window.addEventListener('touchstart', e => {
+            if (e.touches.length > 0 && !e.target.closest('button, a, nav')) {
+                pointer.lastPaintX = null;
+                pointer.lastPaintY = null;
+                handlePaintMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
         window.addEventListener('touchmove', e => {
-            if (e.touches.length > 0) {
+            if (e.touches.length > 0 && !e.target.closest('button, a, nav')) {
                 handlePaintMove(e.touches[0].clientX, e.touches[0].clientY);
             }
         }, { passive: true });
@@ -1802,8 +1865,18 @@
         }, { passive: true });
 
         // ============================================
-        // BLOOM REVEAL & RESET INK TRANSITION BUTTONS
+        // BLOOM REVEAL, RESET INK & MOBILE CHAPTER NAV
         // ============================================
+        document.getElementById('btn-prev-chapter').addEventListener('click', () => {
+            const cur = inContactMode ? 5 : activeSceneIndex;
+            smoothScrollTo(CHAPTER_STOPS[Math.max(0, cur - 1)]);
+        });
+
+        document.getElementById('btn-next-chapter').addEventListener('click', () => {
+            const cur = inContactMode ? 5 : activeSceneIndex;
+            smoothScrollTo(CHAPTER_STOPS[Math.min(CHAPTER_STOPS.length - 1, cur + 1)]);
+        });
+
         document.getElementById('btn-bloom').addEventListener('click', () => {
             const scene = sceneData[activeSceneIndex];
             scene.bloomActive = true;
