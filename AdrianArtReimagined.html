@@ -195,7 +195,7 @@
            SCROLL STAGE & CANVAS
            ============================================ */
         #scroll-container {
-            height: 1100vh;
+            height: 1700vh;
             width: 1px;
             pointer-events: none;
         }
@@ -917,10 +917,10 @@
 
         <footer class="gallery-footer">
             <div class="ticker-wrap" id="ticker-wrap">
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
-                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • REVERIE • AMBER • SUNSHOWER • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • REVERIE • AMBER • SUNSHOWER • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • REVERIE • AMBER • SUNSHOWER • MIYABI • </span>
+                <span class="ticker-item">LUMINA. • INTERACTIVE ART GALLERY • @AGIIZART • GLIMPSE • REVERIE • AMBER • SUNSHOWER • MIYABI • </span>
             </div>
         </footer>
     </div>
@@ -931,19 +931,31 @@
             <span class="chapter-indicator"></span>
             <span class="chapter-label">01 Glimpse</span>
         </button>
-        <button class="chapter-dot-btn hover-target" data-target="0.60" aria-label="Jump to Miyabi">
+        <button class="chapter-dot-btn hover-target" data-target="0.24" aria-label="Jump to Reverie">
             <span class="chapter-indicator"></span>
-            <span class="chapter-label">02 Miyabi</span>
+            <span class="chapter-label">02 Reverie</span>
+        </button>
+        <button class="chapter-dot-btn hover-target" data-target="0.43" aria-label="Jump to Amber">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">03 Amber</span>
+        </button>
+        <button class="chapter-dot-btn hover-target" data-target="0.62" aria-label="Jump to Sunshower">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">04 Sunshower</span>
+        </button>
+        <button class="chapter-dot-btn hover-target" data-target="0.80" aria-label="Jump to Miyabi">
+            <span class="chapter-indicator"></span>
+            <span class="chapter-label">05 Miyabi</span>
         </button>
         <button class="chapter-dot-btn hover-target" data-target="1" aria-label="Jump to Contact">
             <span class="chapter-indicator"></span>
-            <span class="chapter-label">03 Contact</span>
+            <span class="chapter-label">06 Contact</span>
         </button>
     </aside>
 
     <!-- Editorial Artwork Placard -->
     <div class="artwork-placard" id="artwork-placard">
-        <div class="placard-index" id="placard-index">01 / 02</div>
+        <div class="placard-index" id="placard-index">01 / 05</div>
         <div class="placard-title-wrap">
             <h2 class="placard-title" id="placard-title">Glimpse</h2>
         </div>
@@ -1014,7 +1026,7 @@
         const SCENES = [
             {
                 id: 'glimpse',
-                index: '01 / 02',
+                index: '01 / 05',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
                 colorSrc: 'assets/glimpse.webp',
@@ -1022,8 +1034,35 @@
                 hint: 'Move Brush to Reveal Glimpse'
             },
             {
+                id: 'reverie',
+                index: '02 / 05',
+                title: 'Reverie',
+                subtitle: 'Sunlit Portrait in Lavender & Ink',
+                colorSrc: 'assets/reverie.webp',
+                lineSrc: 'assets/reverie_line.webp',
+                hint: 'Move Brush to Reveal Reverie'
+            },
+            {
+                id: 'amber',
+                index: '03 / 05',
+                title: 'Amber',
+                subtitle: 'Golden Hour Silhouette & Texture',
+                colorSrc: 'assets/amber.webp',
+                lineSrc: 'assets/amber_line.webp',
+                hint: 'Move Brush to Reveal Amber'
+            },
+            {
+                id: 'sunshower',
+                index: '04 / 05',
+                title: 'Sunshower',
+                subtitle: 'Motion, Breeze & After-Rain Light',
+                colorSrc: 'assets/sunshower.webp',
+                lineSrc: 'assets/sunshower_line.webp',
+                hint: 'Move Brush to Reveal Sunshower'
+            },
+            {
                 id: 'miyabi',
-                index: '02 / 02',
+                index: '05 / 05',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
                 colorSrc: 'assets/miyabi.webp',
@@ -1374,22 +1413,54 @@
             let rotation = 0;
 
             if (sceneIdx === 0) {
-                // SCENE 01: GLIMPSE (0.00 -> 0.45)
-                const outT = clamp((p - 0.14) / 0.31, 0, 1);
+                // 01 GLIMPSE (0.00 -> 0.21): Recede + upward drift
+                const outT = clamp((p - 0.09) / 0.12, 0, 1);
                 const easedOut = easeInOutCubic(outT);
                 opacity = 1 - easedOut;
-                scale = 1 - easedOut * 0.26;
+                scale = 1 - easedOut * 0.24;
                 ty = viewH / 2 - easedOut * (viewH * 0.08);
-                rotation = -easedOut * 0.045;
+                rotation = -easedOut * 0.04;
             } else if (sceneIdx === 1) {
-                // SCENE 02: MIYABI (0.22 -> 1.00) — Signature macro zoom-out + glide left for Contact
-                const inT = clamp((p - 0.22) / 0.36, 0, 1);
+                // 02 REVERIE (0.14 -> 0.40): Diagonal glide-in from slight right + tilt settle
+                const inT = clamp((p - 0.14) / 0.10, 0, 1);
+                const outT = clamp((p - 0.29) / 0.11, 0, 1);
                 const easedIn = easeOutQuart(inT);
-                scale = lerp(5.2, 1.0, easedIn);
+                const easedOut = easeInOutCubic(outT);
+                opacity = easeOutCubic(inT) * (1 - easedOut);
+                scale = lerp(1.26, 1.0, easedIn) * (1 - easedOut * 0.22);
+                tx = viewW / 2 + (1 - easedIn) * (viewW * 0.07) - easedOut * (viewW * 0.05);
+                ty = viewH / 2 + (1 - easedIn) * 32 - easedOut * 48;
+                rotation = (1 - easedIn) * 0.05 - easedOut * 0.035;
+            } else if (sceneIdx === 2) {
+                // 03 AMBER (0.33 -> 0.59): Rising zoom-settle from below
+                const inT = clamp((p - 0.33) / 0.10, 0, 1);
+                const outT = clamp((p - 0.48) / 0.11, 0, 1);
+                const easedIn = easeOutQuart(inT);
+                const easedOut = easeInOutCubic(outT);
+                opacity = easeOutCubic(inT) * (1 - easedOut);
+                scale = lerp(0.82, 1.0, easedIn) * (1 + easedOut * 0.18);
+                ty = viewH / 2 + (1 - easedIn) * (viewH * 0.14) - easedOut * (viewH * 0.08);
+                rotation = (1 - easedIn) * -0.035 + easedOut * 0.03;
+            } else if (sceneIdx === 3) {
+                // 04 SUNSHOWER (0.52 -> 0.77): Breezy sweep from left with gentle tilt settle
+                const inT = clamp((p - 0.52) / 0.10, 0, 1);
+                const outT = clamp((p - 0.66) / 0.11, 0, 1);
+                const easedIn = easeOutQuart(inT);
+                const easedOut = easeInOutCubic(outT);
+                opacity = easeOutCubic(inT) * (1 - easedOut);
+                scale = lerp(1.32, 1.0, easedIn) * (1 - easedOut * 0.24);
+                tx = viewW / 2 - (1 - easedIn) * (viewW * 0.08) + easedOut * (viewW * 0.04);
+                ty = viewH / 2 + (1 - easedIn) * 24 - easedOut * 44;
+                rotation = (1 - easedIn) * -0.055 + easedOut * 0.035;
+            } else if (sceneIdx === 4) {
+                // 05 MIYABI (0.70 -> 1.00): Signature macro zoom-out + glide left for Contact finale
+                const inT = clamp((p - 0.70) / 0.11, 0, 1);
+                const easedIn = easeOutQuart(inT);
+                scale = lerp(4.8, 1.0, easedIn);
                 opacity = easeOutCubic(inT);
 
-                if (p > 0.78) {
-                    const slideT = easeInOutCubic(clamp((p - 0.78) / 0.20, 0, 1));
+                if (p > 0.87) {
+                    const slideT = easeInOutCubic(clamp((p - 0.87) / 0.12, 0, 1));
                     const shiftX = viewW < 900 ? 0 : viewW * 0.23;
                     tx = viewW / 2 - slideT * shiftX;
                     ty = viewH / 2 - (viewW < 900 ? slideT * viewH * 0.12 : 0);
@@ -1511,8 +1582,8 @@
         let displayedPlacardIdx = 0;
 
         function updateChapterUI(p) {
-            const newIdx = p < 0.35 ? 0 : 1;
-            const nowContact = p > 0.80;
+            const newIdx = p < 0.17 ? 0 : p < 0.36 ? 1 : p < 0.55 ? 2 : p < 0.73 ? 3 : 4;
+            const nowContact = p > 0.89;
 
             if (newIdx !== activeSceneIndex) {
                 activeSceneIndex = newIdx;
@@ -1534,7 +1605,7 @@
                 }, 260);
             }
 
-            const activeRailIdx = nowContact ? 2 : activeSceneIndex;
+            const activeRailIdx = nowContact ? 5 : activeSceneIndex;
             if (activeRailIdx !== lastRailIdx) {
                 lastRailIdx = activeRailIdx;
                 chapterButtons.forEach((btn, i) => {

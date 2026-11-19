@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina. | Exhibition Gallery</title>
-    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse and Miyabi — with interactive line-art to color reveals and fullscreen comparison inspection.">
+    <meta name="description" content="Explore the Lumina. art exhibition — Glimpse, Reverie, Amber, Sunshower, and Miyabi — with interactive line-art to color reveals and fullscreen comparison inspection.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
@@ -317,18 +317,21 @@
                         clip-path 1.05s var(--ease-expo);
         }
 
-        .gallery-strip:nth-child(1) { transition-delay: 0s, 0s, 0s, 0.08s; }
-        .gallery-strip:nth-child(2) { transition-delay: 0s, 0s, 0s, 0.2s; }
+        .gallery-strip:nth-child(1) { transition-delay: 0s, 0s, 0s, 0.05s; }
+        .gallery-strip:nth-child(2) { transition-delay: 0s, 0s, 0s, 0.12s; }
+        .gallery-strip:nth-child(3) { transition-delay: 0s, 0s, 0s, 0.19s; }
+        .gallery-strip:nth-child(4) { transition-delay: 0s, 0s, 0s, 0.26s; }
+        .gallery-strip:nth-child(5) { transition-delay: 0s, 0s, 0s, 0.33s; }
         .gallery-strip:last-child { border-right: none; }
 
         /* When hovering any strip, gently recede siblings */
         .gallery-wrapper:hover .gallery-strip:not(:hover) {
-            flex: 0.75;
-            opacity: 0.62;
+            flex: 0.65;
+            opacity: 0.58;
         }
 
         .gallery-strip:hover {
-            flex: 2.35;
+            flex: 3.1;
             background-color: var(--bg-paper-focus);
             opacity: 1 !important;
         }
@@ -736,7 +739,7 @@
                 <img src="assets/glimpse.webp" class="art-layer color-art" alt="Glimpse Color" decoding="async" fetchpriority="high">
             </div>
             <div class="card-info">
-                <span class="card-index">01 / 02</span>
+                <span class="card-index">01 / 05</span>
                 <h2 class="card-title">Glimpse</h2>
                 <p class="card-meta">Digital Ink &amp; Chromatic Study</p>
                 <span class="card-cta">Click to Inspect →</span>
@@ -746,11 +749,53 @@
         <article class="gallery-strip" data-index="1">
             <span class="strip-watermark">02</span>
             <div class="art-card">
-                <img src="assets/miyabi_line.webp" class="art-layer line-art" alt="Miyabi Sketch" decoding="async" fetchpriority="high">
-                <img src="assets/miyabi.webp" class="art-layer color-art" alt="Miyabi Color" decoding="async" fetchpriority="high">
+                <img src="assets/reverie_line.webp" class="art-layer line-art" alt="Reverie Sketch" decoding="async">
+                <img src="assets/reverie.webp" class="art-layer color-art" alt="Reverie Color" decoding="async">
             </div>
             <div class="card-info">
-                <span class="card-index">02 / 02</span>
+                <span class="card-index">02 / 05</span>
+                <h2 class="card-title">Reverie</h2>
+                <p class="card-meta">Sunlit Portrait in Lavender &amp; Ink</p>
+                <span class="card-cta">Click to Inspect →</span>
+            </div>
+        </article>
+
+        <article class="gallery-strip" data-index="2">
+            <span class="strip-watermark">03</span>
+            <div class="art-card">
+                <img src="assets/amber_line.webp" class="art-layer line-art" alt="Amber Sketch" decoding="async">
+                <img src="assets/amber.webp" class="art-layer color-art" alt="Amber Color" decoding="async">
+            </div>
+            <div class="card-info">
+                <span class="card-index">03 / 05</span>
+                <h2 class="card-title">Amber</h2>
+                <p class="card-meta">Golden Hour Silhouette &amp; Texture</p>
+                <span class="card-cta">Click to Inspect →</span>
+            </div>
+        </article>
+
+        <article class="gallery-strip" data-index="3">
+            <span class="strip-watermark">04</span>
+            <div class="art-card">
+                <img src="assets/sunshower_line.webp" class="art-layer line-art" alt="Sunshower Sketch" decoding="async">
+                <img src="assets/sunshower.webp" class="art-layer color-art" alt="Sunshower Color" decoding="async">
+            </div>
+            <div class="card-info">
+                <span class="card-index">04 / 05</span>
+                <h2 class="card-title">Sunshower</h2>
+                <p class="card-meta">Motion, Breeze &amp; After-Rain Light</p>
+                <span class="card-cta">Click to Inspect →</span>
+            </div>
+        </article>
+
+        <article class="gallery-strip" data-index="4">
+            <span class="strip-watermark">05</span>
+            <div class="art-card">
+                <img src="assets/miyabi_line.webp" class="art-layer line-art" alt="Miyabi Sketch" decoding="async">
+                <img src="assets/miyabi.webp" class="art-layer color-art" alt="Miyabi Color" decoding="async">
+            </div>
+            <div class="card-info">
+                <span class="card-index">05 / 05</span>
                 <h2 class="card-title">Miyabi</h2>
                 <p class="card-meta">Cinematic Panorama Composition</p>
                 <span class="card-cta">Click to Inspect →</span>
@@ -762,7 +807,7 @@
     <div id="lightbox" role="dialog" aria-modal="true" aria-label="Artwork Inspection">
         <div class="lightbox-header">
             <div class="lb-title-group">
-                <span class="lb-index" id="lb-index">01 / 02</span>
+                <span class="lb-index" id="lb-index">01 / 05</span>
                 <h2 class="lb-title" id="lb-title">Glimpse</h2>
             </div>
             <button class="lb-close link-target" id="lb-close">Close [ESC]</button>
@@ -788,14 +833,35 @@
     <script>
         const ARTWORKS = [
             {
-                index: '01 / 02',
+                index: '01 / 05',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
                 line: 'assets/glimpse_line.webp',
                 color: 'assets/glimpse.webp'
             },
             {
-                index: '02 / 02',
+                index: '02 / 05',
+                title: 'Reverie',
+                subtitle: 'Sunlit Portrait in Lavender & Ink',
+                line: 'assets/reverie_line.webp',
+                color: 'assets/reverie.webp'
+            },
+            {
+                index: '03 / 05',
+                title: 'Amber',
+                subtitle: 'Golden Hour Silhouette & Texture',
+                line: 'assets/amber_line.webp',
+                color: 'assets/amber.webp'
+            },
+            {
+                index: '04 / 05',
+                title: 'Sunshower',
+                subtitle: 'Motion, Breeze & After-Rain Light',
+                line: 'assets/sunshower_line.webp',
+                color: 'assets/sunshower.webp'
+            },
+            {
+                index: '05 / 05',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
                 line: 'assets/miyabi_line.webp',
