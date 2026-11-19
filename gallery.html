@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina. | Exhibition Gallery</title>
     <meta name="description" content="Explore the Lumina. art exhibition — Glimpse, Reverie, Amber, Sunshower, and Miyabi — with interactive line-art to color reveals, fullscreen comparison, and custom shareable cards.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Lumina. | Exhibition Gallery">
+    <meta property="og:description" content="Explore Glimpse, Reverie, Amber, Sunshower, and Miyabi with interactive line-art to color reveals and custom shareable cards.">
+    <meta property="og:image" content="https://miguelthegreat.github.io/lumina-art-gallery/assets/amber.webp">
+    <meta property="og:url" content="https://miguelthegreat.github.io/lumina-art-gallery/gallery.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lumina. | Exhibition Gallery">
+    <meta name="twitter:description" content="Explore the Lumina. art exhibition with interactive line-art to color reveals.">
+    <meta name="twitter:image" content="https://miguelthegreat.github.io/lumina-art-gallery/assets/amber.webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
@@ -990,7 +999,7 @@
         }
 
         #showcase-canvas {
-            max-height: 62vh;
+            max-height: 70vh;
             max-width: 88vw;
             width: auto;
             height: auto;
@@ -998,14 +1007,75 @@
             box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
         }
 
-        #showcase-player {
-            width: min(420px, 88vw);
-            border-radius: 10px;
+        #showcase-audio-host {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0.001;
+            pointer-events: none;
             overflow: hidden;
-            display: none;
         }
 
-        #showcase-player.has-track { display: block; }
+        #showcase-audio-btn {
+            position: fixed;
+            top: 1.35rem;
+            right: 1.5rem;
+            z-index: 410;
+            display: none;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.5rem 0.95rem 0.5rem 0.78rem;
+            border-radius: 999px;
+            background: rgba(245, 242, 233, 0.08);
+            border: 1px solid rgba(245, 242, 233, 0.18);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--bg-paper);
+            font-family: var(--font-sans);
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease, opacity 0.25s ease;
+            opacity: 0.85;
+        }
+
+        #showcase-audio-btn.is-visible { display: inline-flex; }
+        #showcase-audio-btn:hover {
+            opacity: 1;
+            background: rgba(245, 242, 233, 0.15);
+            border-color: rgba(245, 242, 233, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .audio-bars {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 11px;
+        }
+
+        .audio-bars span {
+            width: 2px;
+            height: 4px;
+            background: var(--accent-warm);
+            border-radius: 2px;
+            transition: height 0.2s ease;
+        }
+
+        #showcase-audio-btn.is-playing .audio-bars span {
+            animation: eqPulse 0.9s ease-in-out infinite alternate;
+        }
+        #showcase-audio-btn.is-playing .audio-bars span:nth-child(2) { animation-delay: 0.22s; }
+        #showcase-audio-btn.is-playing .audio-bars span:nth-child(3) { animation-delay: 0.44s; }
+
+        @keyframes eqPulse {
+            0% { height: 3px; opacity: 0.6; }
+            100% { height: 11px; opacity: 1; }
+        }
 
         .showcase-actions {
             display: flex;
@@ -1245,15 +1315,20 @@
     <!-- Shared Link Showcase View (auto-opens when visiting a shared URL) -->
     <div id="shared-showcase" aria-label="Shared Artwork Card">
         <div class="showcase-glow" id="showcase-glow"></div>
+        <button id="showcase-audio-btn" type="button" aria-label="Play or pause soundtrack">
+            <span class="audio-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span id="showcase-audio-icon">▶</span>
+            <span id="showcase-audio-label">Play Music</span>
+        </button>
         <div class="showcase-inner">
             <canvas id="showcase-canvas"></canvas>
-            <div id="showcase-player"></div>
             <div class="showcase-actions">
                 <button class="action-primary" id="showcase-explore" style="flex: none; padding: 0.78rem 1.5rem;">Explore Full Gallery</button>
                 <button class="action-secondary" id="showcase-download">Download Card</button>
                 <a href="AdrianArtReimagined.html" class="action-secondary transition-link" style="text-decoration: none;">Paint in Experience Mode</a>
             </div>
         </div>
+        <div id="showcase-audio-host" aria-hidden="true"></div>
     </div>
 
     <script>
@@ -1333,7 +1408,7 @@
                     b0 = 0.997 * b0 + white * 0.029;
                     b1 = 0.985 * b1 + white * 0.032;
                     b2 = 0.950 * b2 + white * 0.048;
-                    data[i] = (b0 + b1 + b2 + white * 0.18) * 1.4;
+                    data[i] = (b0 + b1 + b2 + white * 0.08) * 0.85;
                 }
             }
             if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
@@ -1353,19 +1428,19 @@
             src.buffer = noiseBuffer;
             const bp = ac.createBiquadFilter();
             bp.type = 'bandpass';
-            bp.frequency.setValueAtTime(1200, t);
-            bp.frequency.exponentialRampToValueAtTime(2300, t + 0.12);
-            bp.frequency.exponentialRampToValueAtTime(950, t + 0.36);
-            bp.Q.value = 1.1;
+            bp.frequency.setValueAtTime(1400, t);
+            bp.frequency.exponentialRampToValueAtTime(2100, t + 0.10);
+            bp.frequency.exponentialRampToValueAtTime(1000, t + 0.28);
+            bp.Q.value = 0.85;
             const gain = ac.createGain();
             gain.gain.setValueAtTime(0.0001, t);
-            gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.40);
+            gain.gain.linearRampToValueAtTime(0.045, t + 0.035);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.30);
             src.connect(bp);
             bp.connect(gain);
             gain.connect(ac.destination);
             src.start(t);
-            src.stop(t + 0.42);
+            src.stop(t + 0.32);
         }
 
         // ============================================
@@ -1633,6 +1708,7 @@
                 return {
                     provider: 'spotify',
                     code: val,
+                    spotifyUri: `spotify:${spCode[1]}:${spCode[2]}`,
                     label: `Spotify ${spCode[1]}`,
                     embedUrl: `https://open.spotify.com/embed/${spCode[1]}/${spCode[2]}?utm_source=generator&theme=0`,
                     height: spCode[1] === 'track' ? 80 : 152
@@ -1643,6 +1719,7 @@
                 return {
                     provider: 'youtube',
                     code: val,
+                    youtubeId: ytCode[1],
                     label: 'YouTube Music',
                     embedUrl: `https://www.youtube.com/embed/${ytCode[1]}?rel=0`,
                     height: 152
@@ -1657,6 +1734,7 @@
                 return {
                     provider: 'spotify',
                     code: `sp:${kind}:${id}`,
+                    spotifyUri: `spotify:${kind}:${id}`,
                     label: `Spotify ${kind}`,
                     embedUrl: `https://open.spotify.com/embed/${kind}/${id}?utm_source=generator&theme=0`,
                     height: kind === 'track' ? 80 : 152
@@ -1671,6 +1749,7 @@
                 return {
                     provider: 'youtube',
                     code: `yt:${id}`,
+                    youtubeId: id,
                     label: 'YouTube Music',
                     embedUrl: `https://www.youtube.com/embed/${id}?rel=0`,
                     height: 152
@@ -2076,9 +2155,9 @@
 
         function buildShareUrl() {
             const art = ARTWORKS[currentLightboxIdx];
-            const url = new URL(window.location.href.split('?')[0].split('#')[0]);
-            url.searchParams.set('share', '1');
-            url.searchParams.set('art', art.id);
+            const baseDir = window.location.href.split('?')[0].split('#')[0].replace(/\/[^/]*$/, '/');
+            const slug = shareState.variant === 'line' ? `${art.id}-line` : art.id;
+            const url = new URL(`share/${slug}.html`, baseDir);
             url.searchParams.set('variant', shareState.variant);
             url.searchParams.set('card', shareState.cardStyle);
             url.searchParams.set('title', shareState.showTitle ? '1' : '0');
@@ -2117,8 +2196,134 @@
         });
 
         // ============================================
-        // SHARED LINK SHOWCASE INITIALIZATION
+        // SHARED LINK SHOWCASE & BACKGROUND AUDIO
         // ============================================
+        function setupShowcaseAudio(parsed) {
+            const host = document.getElementById('showcase-audio-host');
+            const btn = document.getElementById('showcase-audio-btn');
+            const icon = document.getElementById('showcase-audio-icon');
+            const label = document.getElementById('showcase-audio-label');
+
+            if (!parsed || parsed.invalid) {
+                btn.classList.remove('is-visible', 'is-playing');
+                host.innerHTML = '';
+                return () => {};
+            }
+
+            btn.classList.add('is-visible');
+            let isPlaying = false;
+            let toggleFn = null;
+            let playFn = null;
+
+            function setUiPlaying(playing) {
+                isPlaying = playing;
+                btn.classList.toggle('is-playing', playing);
+                icon.textContent = playing ? '❚❚' : '▶';
+                label.textContent = playing ? 'Pause Music' : 'Play Music';
+            }
+            setUiPlaying(false);
+
+            if (parsed.provider === 'youtube' && parsed.youtubeId) {
+                const iframe = document.createElement('iframe');
+                const originParam = window.location.origin && window.location.origin !== 'null'
+                    ? `&origin=${encodeURIComponent(window.location.origin)}`
+                    : '';
+                iframe.src = `https://www.youtube.com/embed/${parsed.youtubeId}?autoplay=1&enablejsapi=1&playsinline=1&rel=0${originParam}`;
+                iframe.width = '1';
+                iframe.height = '1';
+                iframe.allow = 'autoplay; encrypted-media';
+                iframe.style.border = '0';
+                host.innerHTML = '';
+                host.appendChild(iframe);
+
+                const sendYt = (func) => {
+                    try {
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: '' }), '*');
+                    } catch {}
+                };
+
+                iframe.addEventListener('load', () => {
+                    try {
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+                    } catch {}
+                    sendYt('playVideo');
+                });
+
+                window.addEventListener('message', (e) => {
+                    if (typeof e.data !== 'string') return;
+                    if (!e.origin || !e.origin.includes('youtube.com')) return;
+                    try {
+                        const msg = JSON.parse(e.data);
+                        const state = msg && msg.info && typeof msg.info.playerState === 'number'
+                            ? msg.info.playerState
+                            : (msg && msg.event === 'onStateChange' ? msg.info : null);
+                        if (state === 1) setUiPlaying(true);
+                        else if (state === 2 || state === 0) setUiPlaying(false);
+                    } catch {}
+                });
+
+                playFn = () => { sendYt('playVideo'); setUiPlaying(true); };
+                toggleFn = () => {
+                    if (isPlaying) { sendYt('pauseVideo'); setUiPlaying(false); }
+                    else { sendYt('playVideo'); setUiPlaying(true); }
+                };
+            } else if (parsed.provider === 'spotify' && parsed.spotifyUri) {
+                const target = document.createElement('div');
+                host.innerHTML = '';
+                host.appendChild(target);
+
+                let spController = null;
+                const initSpotify = (IFrameAPI) => {
+                    IFrameAPI.createController(target, { uri: parsed.spotifyUri, width: 1, height: 1 }, (controller) => {
+                        spController = controller;
+                        controller.addListener('playback_update', (ev) => {
+                            if (ev && ev.data) setUiPlaying(!ev.data.isPaused);
+                        });
+                        try { controller.play(); } catch {}
+                    });
+                };
+
+                if (window.__spotifyIframeAPI) {
+                    initSpotify(window.__spotifyIframeAPI);
+                } else {
+                    window.onSpotifyIframeApiReady = (IFrameAPI) => {
+                        window.__spotifyIframeAPI = IFrameAPI;
+                        initSpotify(IFrameAPI);
+                    };
+                    const s = document.createElement('script');
+                    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
+                    s.async = true;
+                    document.head.appendChild(s);
+                }
+
+                playFn = () => { if (spController) spController.play(); };
+                toggleFn = () => {
+                    if (spController) {
+                        spController.togglePlay();
+                        setUiPlaying(!isPlaying);
+                    }
+                };
+            }
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (toggleFn) toggleFn();
+            });
+
+            // If browser autoplay policy blocked unmuted playback on initial load, start on first gesture
+            const resumeOnGesture = () => {
+                if (!isPlaying && playFn) playFn();
+            };
+            ['pointerdown', 'keydown'].forEach(evt => {
+                window.addEventListener(evt, resumeOnGesture, { once: true, passive: true });
+            });
+
+            return () => {
+                host.innerHTML = '';
+                btn.classList.remove('is-visible', 'is-playing');
+            };
+        }
+
         (async function initSharedShowcaseIfPresent() {
             const params = new URLSearchParams(window.location.search);
             if (params.get('share') !== '1') return;
@@ -2139,7 +2344,6 @@
 
             const showcase = document.getElementById('shared-showcase');
             const showcaseCanvas = document.getElementById('showcase-canvas');
-            const showcasePlayer = document.getElementById('showcase-player');
             const showcaseGlow = document.getElementById('showcase-glow');
 
             showcaseGlow.style.background = art.glow;
@@ -2147,11 +2351,10 @@
             document.body.classList.add('modal-open');
 
             await renderDesignCard(showcaseCanvas, art, { variant, cardStyle, showTitle, overrideState });
-            if (musicParsed && !musicParsed.invalid) {
-                mountMusicEmbed(showcasePlayer, musicParsed);
-            }
+            const stopAudio = setupShowcaseAudio(musicParsed);
 
             document.getElementById('showcase-explore').addEventListener('click', () => {
+                stopAudio();
                 showcase.classList.remove('is-open');
                 document.body.classList.remove('modal-open');
                 history.replaceState(null, '', window.location.pathname);

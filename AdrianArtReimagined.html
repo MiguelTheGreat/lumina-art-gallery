@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina. — Interactive Art Gallery Experience</title>
     <meta name="description" content="Lumina. An interactive digital art gallery experience by @agiizart where brushstrokes reveal color from monochrome line art.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Lumina. — Interactive Art Gallery Experience">
+    <meta property="og:description" content="Paint across monochrome line art to reveal full-color illustrations in an atmospheric digital exhibition.">
+    <meta property="og:image" content="https://miguelthegreat.github.io/lumina-art-gallery/assets/amber.webp">
+    <meta property="og:url" content="https://miguelthegreat.github.io/lumina-art-gallery/AdrianArtReimagined.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lumina. — Interactive Art Gallery Experience">
+    <meta name="twitter:description" content="Paint across monochrome line art to reveal full-color illustrations.">
+    <meta name="twitter:image" content="https://miguelthegreat.github.io/lumina-art-gallery/assets/amber.webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="image" href="assets/glimpse_line.webp" fetchpriority="high">
@@ -1165,7 +1174,7 @@
                     b0 = 0.997 * b0 + white * 0.029;
                     b1 = 0.985 * b1 + white * 0.032;
                     b2 = 0.950 * b2 + white * 0.048;
-                    data[i] = (b0 + b1 + b2 + white * 0.18) * 1.45;
+                    data[i] = (b0 + b1 + b2 + white * 0.08) * 0.85;
                 }
             }
             if (audioCtx.state === 'suspended') {
@@ -1190,51 +1199,50 @@
 
             const t = ac.currentTime;
 
-            // Layer 1: Crisp parchment slide / page turn swoosh
+            // Layer 1: Subtle, delicate parchment whisper
             const src1 = ac.createBufferSource();
             src1.buffer = noiseBuffer;
 
             const bp1 = ac.createBiquadFilter();
             bp1.type = 'bandpass';
-            bp1.frequency.setValueAtTime(1150, t);
-            bp1.frequency.exponentialRampToValueAtTime(2450, t + 0.14);
-            bp1.frequency.exponentialRampToValueAtTime(920, t + 0.42);
-            bp1.Q.value = 1.1;
+            bp1.frequency.setValueAtTime(1400, t);
+            bp1.frequency.exponentialRampToValueAtTime(2100, t + 0.11);
+            bp1.frequency.exponentialRampToValueAtTime(1000, t + 0.30);
+            bp1.Q.value = 0.85;
 
             const hp = ac.createBiquadFilter();
             hp.type = 'highpass';
-            hp.frequency.value = 340;
+            hp.frequency.value = 420;
 
             const gain1 = ac.createGain();
             gain1.gain.setValueAtTime(0.0001, t);
-            gain1.gain.linearRampToValueAtTime(0.24, t + 0.045);
-            gain1.gain.exponentialRampToValueAtTime(0.09, t + 0.16);
-            gain1.gain.linearRampToValueAtTime(0.16, t + 0.24);
-            gain1.gain.exponentialRampToValueAtTime(0.0001, t + 0.46);
+            gain1.gain.linearRampToValueAtTime(0.055, t + 0.04);
+            gain1.gain.exponentialRampToValueAtTime(0.022, t + 0.14);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
 
             src1.connect(bp1);
             bp1.connect(hp);
             hp.connect(gain1);
             gain1.connect(ac.destination);
             src1.start(t);
-            src1.stop(t + 0.48);
+            src1.stop(t + 0.34);
 
-            // Layer 2: Soft low-frequency paper settle thump
+            // Layer 2: Very soft low-frequency paper settle
             const src2 = ac.createBufferSource();
             src2.buffer = noiseBuffer;
             const lp = ac.createBiquadFilter();
             lp.type = 'lowpass';
-            lp.frequency.setValueAtTime(480, t);
+            lp.frequency.setValueAtTime(420, t);
             const gain2 = ac.createGain();
-            gain2.gain.setValueAtTime(0.0001, t + 0.06);
-            gain2.gain.linearRampToValueAtTime(0.11, t + 0.13);
-            gain2.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
+            gain2.gain.setValueAtTime(0.0001, t + 0.05);
+            gain2.gain.linearRampToValueAtTime(0.025, t + 0.11);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
 
             src2.connect(lp);
             lp.connect(gain2);
             gain2.connect(ac.destination);
-            src2.start(t + 0.06);
-            src2.stop(t + 0.38);
+            src2.start(t + 0.05);
+            src2.stop(t + 0.30);
         }
 
         // ============================================
