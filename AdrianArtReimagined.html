@@ -7,6 +7,8 @@
     <meta name="description" content="Lumina. An interactive digital art gallery experience by @agiizart where brushstrokes reveal color from monochrome line art.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" href="assets/glimpse_line.webp" fetchpriority="high">
+    <link rel="preload" as="image" href="assets/glimpse.webp" fetchpriority="high">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -619,7 +621,10 @@
             top: 0;
             left: 0;
             height: 2px;
-            width: 0%;
+            width: 100%;
+            transform: scaleX(0);
+            transform-origin: left center;
+            will-change: transform;
             background: linear-gradient(90deg, var(--ink-primary), var(--accent-warm));
             z-index: 80;
             pointer-events: none;
@@ -1004,7 +1009,7 @@
 
     <script>
         // ============================================
-        // ARTWORK CONFIGURATION
+        // ARTWORK CONFIGURATION (Optimized WebP Assets)
         // ============================================
         const SCENES = [
             {
@@ -1012,8 +1017,8 @@
                 index: '01 / 02',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
-                colorSrc: 'glimpse.png',
-                lineSrc: 'glimpse_1.png',
+                colorSrc: 'assets/glimpse.webp',
+                lineSrc: 'assets/glimpse_line.webp',
                 hint: 'Move Brush to Reveal Glimpse'
             },
             {
@@ -1021,16 +1026,18 @@
                 index: '02 / 02',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
-                colorSrc: 'miyabi 2.png',
-                lineSrc: 'miyabi.png',
+                colorSrc: 'assets/miyabi.webp',
+                lineSrc: 'assets/miyabi_line.webp',
                 hint: 'Move Brush to Reveal Miyabi'
             }
         ];
 
         const BRUSH_RADIUS = 64;
+        const MAX_DPR = 2;
 
         const canvas = document.getElementById('artCanvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        // Omit willReadFrequently to keep hardware GPU acceleration enabled
+        const ctx = canvas.getContext('2d', { alpha: true });
         const loader = document.getElementById('loader');
         const hint = document.getElementById('hint');
         const contactCards = document.querySelectorAll('.contact-card');
@@ -1063,18 +1070,26 @@
         // ============================================
         // CINEMATIC CURTAIN TRANSITIONS
         // ============================================
+        let curtainOpened = false;
+        const pageStartTime = performance.now();
+
         function openCurtain() {
+            if (curtainOpened) return;
+            curtainOpened = true;
             overlay.classList.add('curtain-open');
             document.body.classList.add('app-ready');
         }
 
-        window.addEventListener('load', () => {
-            setTimeout(openCurtain, 1850);
-        });
+        function tryOpenCurtain() {
+            const elapsed = performance.now() - pageStartTime;
+            const remaining = Math.max(0, 1150 - elapsed);
+            setTimeout(openCurtain, remaining);
+        }
 
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) {
                 overlay.classList.remove('curtain-closing');
+                curtainOpened = false;
                 openCurtain();
             }
         });
@@ -1088,7 +1103,7 @@
                 overlay.classList.add('curtain-closing');
                 setTimeout(() => {
                     window.location.href = target;
-                }, 850);
+                }, 780);
             });
         });
 
@@ -1149,30 +1164,43 @@
         });
 
         // ============================================
-        // ARTWORK ASSETS, MASKS & PARTICLES
+        // ARTWORK ASSETS, CACHED OFFSCREEN BUFFERS & PARTICLES
         // ============================================
         const sceneData = SCENES.map(cfg => {
             const maskCanvas = document.createElement('canvas');
             const maskCtx = maskCanvas.getContext('2d');
+            const compositeCanvas = document.createElement('canvas');
+            const compositeCtx = compositeCanvas.getContext('2d');
+            const scaledLineCanvas = document.createElement('canvas');
+            const scaledLineCtx = scaledLineCanvas.getContext('2d');
+            const scaledColorCanvas = document.createElement('canvas');
+            const scaledColorCtx = scaledColorCanvas.getContext('2d');
             return {
                 ...cfg,
                 colorImg: new Image(),
                 lineImg: new Image(),
                 maskCanvas,
                 maskCtx,
+                compositeCanvas,
+                compositeCtx,
+                scaledLineCanvas,
+                scaledLineCtx,
+                scaledColorCanvas,
+                scaledColorCtx,
+                sw: 1,
+                sh: 1,
+                maskDirty: true,
+                hasPaint: false,
                 revealProgress: 0,
                 bloomActive: false,
                 bloomRadius: 0
             };
         });
 
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-
         // Subtle floating ink/gold dust particles spawned along brushstrokes
         const particles = [];
         function spawnParticle(x, y) {
-            if (particles.length > 55) return;
+            if (particles.length > 48) return;
             particles.push({
                 x,
                 y,
@@ -1181,7 +1209,7 @@
                 size: 1.2 + Math.random() * 2.4,
                 alpha: 0.45 + Math.random() * 0.35,
                 life: 0,
-                maxLife: 36 + Math.random() * 30,
+                maxLife: 36 + Math.random() * 28,
                 warm: Math.random() > 0.45
             });
         }
@@ -1196,6 +1224,8 @@
         }
 
         sceneData.forEach(s => {
+            s.colorImg.decoding = 'async';
+            s.lineImg.decoding = 'async';
             s.colorImg.onload = checkReady;
             s.colorImg.onerror = checkReady;
             s.lineImg.onload = checkReady;
@@ -1204,82 +1234,144 @@
             s.lineImg.src = s.lineSrc;
         });
 
+        // Fallback safety in case an image stalls
+        setTimeout(() => {
+            if (!curtainOpened) openCurtain();
+        }, 3200);
+
         // ============================================
-        // SCROLL & CHAPTER STATE (WITH INERTIA LERP)
+        // SCROLL, LAYOUT CACHE & CHAPTER STATE
         // ============================================
+        let viewW = window.innerWidth;
+        let viewH = window.innerHeight;
+        let dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+        let maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        let tickerHalfWidth = 1000;
+
         let targetScroll = 0;
         let smoothScroll = 0;
         let scrollVelocity = 0;
         let activeSceneIndex = 0;
         let inContactMode = false;
         let tickerOffset = 0;
+        let rafId = null;
+
+        // Cached DOM state to eliminate redundant writes
+        let lastRailIdx = -1;
+        let lastRevealPct = -1;
+        let lastHintText = '';
+        let lastScrollScale = -1;
 
         function startApp() {
             loaded = true;
             loader.style.display = 'none';
             resize();
-            requestAnimationFrame(animate);
-        }
-
-        function updateMaskSize(scene) {
-            const img = scene.colorImg;
-            const padding = window.innerWidth < 768 ? 72 : 140;
-            const scale = Math.min(
-                (window.innerWidth - padding) / (img.width || 800),
-                (window.innerHeight - padding) / (img.height || 1000)
-            );
-            const newW = Math.max(1, Math.round((img.width || 800) * scale));
-            const newH = Math.max(1, Math.round((img.height || 1000) * scale));
-
-            if (scene.maskCanvas.width !== newW || scene.maskCanvas.height !== newH) {
-                const buffer = document.createElement('canvas');
-                buffer.width = scene.maskCanvas.width || 1;
-                buffer.height = scene.maskCanvas.height || 1;
-                if (scene.maskCanvas.width > 0 && scene.maskCanvas.height > 0) {
-                    buffer.getContext('2d').drawImage(scene.maskCanvas, 0, 0);
-                }
-                scene.maskCanvas.width = newW;
-                scene.maskCanvas.height = newH;
-                if (buffer.width > 1) {
-                    scene.maskCtx.drawImage(buffer, 0, 0, newW, newH);
-                }
+            tryOpenCurtain();
+            if (!document.hidden && !rafId) {
+                rafId = requestAnimationFrame(animate);
             }
         }
 
-        function resize() {
-            if (!loaded) return;
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            sceneData.forEach(updateMaskSize);
+        function updateSceneBuffers(scene) {
+            const imgW = scene.colorImg.naturalWidth || 800;
+            const imgH = scene.colorImg.naturalHeight || 1000;
+            const padding = viewW < 768 ? 72 : 140;
+            const scale = Math.min((viewW - padding) / imgW, (viewH - padding) / imgH);
+            const sw = Math.max(1, Math.round(imgW * scale));
+            const sh = Math.max(1, Math.round(imgH * scale));
+            scene.sw = sw;
+            scene.sh = sh;
+
+            const bufW = Math.max(1, Math.round(sw * dpr));
+            const bufH = Math.max(1, Math.round(sh * dpr));
+
+            // Preserve existing painted mask on resize
+            if (scene.maskCanvas.width !== sw || scene.maskCanvas.height !== sh) {
+                const prevW = scene.maskCanvas.width;
+                const prevH = scene.maskCanvas.height;
+                let prevMask = null;
+                if (prevW > 0 && prevH > 0 && scene.hasPaint) {
+                    prevMask = document.createElement('canvas');
+                    prevMask.width = prevW;
+                    prevMask.height = prevH;
+                    prevMask.getContext('2d').drawImage(scene.maskCanvas, 0, 0);
+                }
+                scene.maskCanvas.width = sw;
+                scene.maskCanvas.height = sh;
+                if (prevMask) {
+                    scene.maskCtx.drawImage(prevMask, 0, 0, sw, sh);
+                }
+            }
+
+            // Pre-scale line & color bitmaps to viewport resolution for 1:1 GPU blits
+            scene.scaledLineCanvas.width = bufW;
+            scene.scaledLineCanvas.height = bufH;
+            scene.scaledLineCtx.imageSmoothingEnabled = true;
+            scene.scaledLineCtx.imageSmoothingQuality = 'high';
+            scene.scaledLineCtx.drawImage(scene.lineImg, 0, 0, bufW, bufH);
+
+            scene.scaledColorCanvas.width = bufW;
+            scene.scaledColorCanvas.height = bufH;
+            scene.scaledColorCtx.imageSmoothingEnabled = true;
+            scene.scaledColorCtx.imageSmoothingQuality = 'high';
+            scene.scaledColorCtx.drawImage(scene.colorImg, 0, 0, bufW, bufH);
+
+            scene.compositeCanvas.width = bufW;
+            scene.compositeCanvas.height = bufH;
+            scene.maskDirty = true;
         }
 
-        window.addEventListener('resize', resize);
+        function resize() {
+            viewW = window.innerWidth;
+            viewH = window.innerHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+            maxScroll = Math.max(1, document.documentElement.scrollHeight - viewH);
+            tickerHalfWidth = tickerWrap.scrollWidth / 2 || 1000;
+
+            if (!loaded) return;
+            canvas.width = Math.round(viewW * dpr);
+            canvas.height = Math.round(viewH * dpr);
+            canvas.style.width = `${viewW}px`;
+            canvas.style.height = `${viewH}px`;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            sceneData.forEach(updateSceneBuffers);
+        }
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(resize, 90);
+        });
 
         window.addEventListener('scroll', () => {
-            const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-            targetScroll = clamp(window.scrollY / max, 0, 1);
+            targetScroll = clamp(window.scrollY / maxScroll, 0, 1);
         }, { passive: true });
+
+        // Pause RAF when tab is hidden to save CPU/battery
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+            } else if (loaded && !rafId) {
+                rafId = requestAnimationFrame(animate);
+            }
+        });
 
         // ============================================
         // CHOREOGRAPHED SCENE TRANSITION PARAMETERS
         // ============================================
         function getViewParams(sceneIdx, p) {
-            const viewW = window.innerWidth;
-            const viewH = window.innerHeight;
             const scene = sceneData[sceneIdx];
-            const imgW = scene.colorImg.width || 800;
-            const imgH = scene.colorImg.height || 1000;
-            const padding = viewW < 768 ? 72 : 140;
-            const baseScale = Math.min((viewW - padding) / imgW, (viewH - padding) / imgH);
-            const settledW = imgW * baseScale;
-            const settledH = imgH * baseScale;
+            const settledW = scene.sw;
+            const settledH = scene.sh;
 
             let scale = 1;
             let opacity = 0;
             let tx = viewW / 2;
             let ty = viewH / 2;
             let rotation = 0;
-            let clipProgress = 1; // 1 = fully visible, 0 = clipped closed
 
             if (sceneIdx === 0) {
                 // SCENE 01: GLIMPSE (0.00 -> 0.45)
@@ -1311,7 +1403,7 @@
             tx += pointer.smoothNormX * parallaxStrength;
             ty += pointer.smoothNormY * (parallaxStrength * 0.65);
 
-            return { scale, opacity, tx, ty, sw: settledW, sh: settledH, rotation, clipProgress };
+            return { scale, opacity, tx, ty, sw: settledW, sh: settledH, rotation };
         }
 
         // ============================================
@@ -1321,7 +1413,6 @@
             const paintX = (x - params.tx) / params.scale + params.sw / 2;
             const paintY = (y - params.ty) / params.scale + params.sh / 2;
 
-            // Only paint if near the artwork bounds
             const r = BRUSH_RADIUS / params.scale;
             if (paintX < -r || paintX > params.sw + r || paintY < -r || paintY > params.sh + r) {
                 return false;
@@ -1339,7 +1430,8 @@
             mCtx.arc(paintX, paintY, r, 0, Math.PI * 2);
             mCtx.fill();
 
-            // Estimate reveal increment
+            scene.hasPaint = true;
+            scene.maskDirty = true;
             scene.revealProgress = Math.min(100, scene.revealProgress + 0.14);
             return true;
         }
@@ -1347,8 +1439,8 @@
         function handlePaintMove(clientX, clientY) {
             pointer.x = clientX;
             pointer.y = clientY;
-            pointer.normX = (clientX / window.innerWidth - 0.5) * 2;
-            pointer.normY = (clientY / window.innerHeight - 0.5) * 2;
+            pointer.normX = (clientX / viewW - 0.5) * 2;
+            pointer.normY = (clientY / viewH - 0.5) * 2;
             pointer.active = true;
 
             if (!loaded || inContactMode) return;
@@ -1357,11 +1449,10 @@
             const params = getViewParams(activeSceneIndex, smoothScroll);
             if (params.opacity < 0.25) return;
 
-            // Interpolate points between last and current mouse position for silky strokes
             const startX = pointer.lastPaintX ?? clientX;
             const startY = pointer.lastPaintY ?? clientY;
             const dist = Math.hypot(clientX - startX, clientY - startY);
-            const steps = Math.max(1, Math.min(18, Math.ceil(dist / 10)));
+            const steps = Math.max(1, Math.min(14, Math.ceil(dist / 12)));
 
             let paintedAny = false;
             for (let i = 1; i <= steps; i++) {
@@ -1384,7 +1475,7 @@
             pointer.lastPaintY = clientY;
         }
 
-        window.addEventListener('mousemove', e => handlePaintMove(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => handlePaintMove(e.clientX, e.clientY), { passive: true });
         window.addEventListener('touchmove', e => {
             if (e.touches.length > 0) {
                 handlePaintMove(e.touches[0].clientX, e.touches[0].clientY);
@@ -1393,7 +1484,7 @@
         window.addEventListener('touchend', () => {
             pointer.lastPaintX = null;
             pointer.lastPaintY = null;
-        });
+        }, { passive: true });
 
         // ============================================
         // BLOOM REVEAL & RESET INK TRANSITION BUTTONS
@@ -1402,17 +1493,20 @@
             const scene = sceneData[activeSceneIndex];
             scene.bloomActive = true;
             scene.bloomRadius = 10;
+            scene.hasPaint = true;
         });
 
         document.getElementById('btn-reset').addEventListener('click', () => {
             const scene = sceneData[activeSceneIndex];
             scene.bloomActive = false;
+            scene.hasPaint = false;
             scene.maskCtx.clearRect(0, 0, scene.maskCanvas.width, scene.maskCanvas.height);
             scene.revealProgress = 0;
+            scene.maskDirty = true;
         });
 
         // ============================================
-        // UI CHAPTER TRANSITIONS
+        // UI CHAPTER TRANSITIONS (Dirty-Checked DOM Updates)
         // ============================================
         let displayedPlacardIdx = 0;
 
@@ -1440,18 +1534,21 @@
                 }, 260);
             }
 
-            // Update rail active dot
             const activeRailIdx = nowContact ? 2 : activeSceneIndex;
-            chapterButtons.forEach((btn, i) => {
-                btn.classList.toggle('active', i === activeRailIdx);
-            });
+            if (activeRailIdx !== lastRailIdx) {
+                lastRailIdx = activeRailIdx;
+                chapterButtons.forEach((btn, i) => {
+                    btn.classList.toggle('active', i === activeRailIdx);
+                });
+            }
 
-            // Update reveal meter for active artwork
             const pct = Math.round(sceneData[activeSceneIndex].revealProgress);
-            revealBarFill.style.width = `${pct}%`;
-            revealPct.textContent = `${pct}% Revealed`;
+            if (pct !== lastRevealPct) {
+                lastRevealPct = pct;
+                revealBarFill.style.width = `${pct}%`;
+                revealPct.textContent = `${pct}% Revealed`;
+            }
 
-            // Toggle contact finale & placard visibility
             if (nowContact !== inContactMode) {
                 inContactMode = nowContact;
                 placard.classList.toggle('placard-hidden', inContactMode);
@@ -1462,27 +1559,44 @@
                 contactEyebrow.style.transform = inContactMode ? 'translateX(0)' : 'translateX(48px)';
 
                 if (inContactMode) {
-                    hint.textContent = 'Connect with Lumina';
                     hint.style.color = '#1a1917';
                     document.body.classList.remove('cursor-painting');
                 } else {
-                    hint.textContent = sceneData[activeSceneIndex].hint;
                     hint.style.color = 'rgba(26, 25, 23, 0.42)';
                 }
-            } else if (!inContactMode) {
-                hint.textContent = sceneData[activeSceneIndex].hint;
+            }
+
+            const nextHint = inContactMode ? 'Connect with Lumina' : sceneData[activeSceneIndex].hint;
+            if (nextHint !== lastHintText) {
+                lastHintText = nextHint;
+                hint.textContent = nextHint;
             }
         }
 
         // ============================================
-        // RENDERING LOOP
+        // RENDERING LOOP (Cached Per-Scene Composite)
         // ============================================
+        function recompositeScene(scene) {
+            const cCtx = scene.compositeCtx;
+            const w = scene.compositeCanvas.width;
+            const h = scene.compositeCanvas.height;
+
+            cCtx.clearRect(0, 0, w, h);
+            if (scene.hasPaint) {
+                cCtx.globalCompositeOperation = 'source-over';
+                cCtx.drawImage(scene.maskCanvas, 0, 0, w, h);
+                cCtx.globalCompositeOperation = 'source-in';
+                cCtx.drawImage(scene.scaledColorCanvas, 0, 0, w, h);
+                cCtx.globalCompositeOperation = 'source-over';
+            }
+            scene.maskDirty = false;
+        }
+
         function drawScene(sceneIdx, p) {
             const scene = sceneData[sceneIdx];
             const params = getViewParams(sceneIdx, p);
             if (params.opacity <= 0.004) return;
 
-            // Handle animated watercolor bloom reveal
             if (scene.bloomActive) {
                 const maxR = Math.hypot(scene.maskCanvas.width, scene.maskCanvas.height) * 0.65;
                 scene.bloomRadius += Math.max(14, maxR * 0.045);
@@ -1498,6 +1612,8 @@
                 mCtx.arc(cx, cy, scene.bloomRadius, 0, Math.PI * 2);
                 mCtx.fill();
 
+                scene.hasPaint = true;
+                scene.maskDirty = true;
                 scene.revealProgress = Math.min(100, (scene.bloomRadius / maxR) * 100);
                 if (scene.bloomRadius >= maxR * 1.35) {
                     mCtx.fillStyle = '#ffffff';
@@ -1507,9 +1623,8 @@
                 }
             }
 
-            if (tempCanvas.width !== scene.maskCanvas.width || tempCanvas.height !== scene.maskCanvas.height) {
-                tempCanvas.width = scene.maskCanvas.width;
-                tempCanvas.height = scene.maskCanvas.height;
+            if (scene.maskDirty) {
+                recompositeScene(scene);
             }
 
             ctx.save();
@@ -1519,52 +1634,41 @@
             ctx.translate(-params.sw / 2, -params.sh / 2);
             ctx.globalAlpha = params.opacity;
 
-            // Optional soft architectural clip reveal for Scene 02 entrance
-            if (params.clipProgress < 0.999) {
-                const insetY = (1 - params.clipProgress) * (params.sh * 0.18);
-                ctx.beginPath();
-                ctx.rect(0, insetY, params.sw, params.sh - insetY * 2);
-                ctx.clip();
+            // 1:1 GPU blit of pre-scaled line art + cached painted color composite
+            ctx.drawImage(scene.scaledLineCanvas, 0, 0, params.sw, params.sh);
+            if (scene.hasPaint) {
+                ctx.drawImage(scene.compositeCanvas, 0, 0, params.sw, params.sh);
             }
-
-            // 1. Draw base monochrome line art
-            ctx.drawImage(scene.lineImg, 0, 0, params.sw, params.sh);
-
-            // 2. Composite painted color mask
-            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.drawImage(scene.maskCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.globalCompositeOperation = 'source-in';
-            tempCtx.drawImage(scene.colorImg, 0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(tempCanvas, 0, 0, params.sw, params.sh);
 
             ctx.restore();
         }
 
         function drawParticles() {
+            if (particles.length === 0) return;
             for (let i = particles.length - 1; i >= 0; i--) {
                 const pt = particles[i];
                 pt.x += pt.vx;
                 pt.y += pt.vy;
                 pt.life++;
                 const progress = pt.life / pt.maxLife;
-                const a = pt.alpha * (1 - progress);
                 if (progress >= 1) {
                     particles.splice(i, 1);
                     continue;
                 }
-                ctx.save();
-                ctx.globalAlpha = a;
+                ctx.globalAlpha = pt.alpha * (1 - progress);
                 ctx.fillStyle = pt.warm ? '#a67c52' : '#2a2825';
                 ctx.beginPath();
                 ctx.arc(pt.x, pt.y, pt.size * (1 - progress * 0.4), 0, Math.PI * 2);
                 ctx.fill();
-                ctx.restore();
             }
+            ctx.globalAlpha = 1;
         }
 
         function animate() {
-            if (!loaded) return;
+            if (!loaded || document.hidden) {
+                rafId = null;
+                return;
+            }
 
             // Smooth inertial scroll interpolation
             const prevScroll = smoothScroll;
@@ -1581,28 +1685,30 @@
             cursorDot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0) translate(-50%, -50%)`;
             cursorBrush.style.transform = `translate3d(${pointer.ringX}px, ${pointer.ringY}px, 0) translate(-50%, -50%)`;
 
-            // Top scroll progress line
-            scrollProgressLine.style.width = `${smoothScroll * 100}%`;
+            // GPU-composited scroll progress bar (only write when changed)
+            const roundedScroll = Math.round(smoothScroll * 1000) / 1000;
+            if (roundedScroll !== lastScrollScale) {
+                lastScrollScale = roundedScroll;
+                scrollProgressLine.style.transform = `scaleX(${roundedScroll})`;
+            }
 
-            // Velocity-reactive marquee ticker
-            const baseSpeed = 0.65;
-            tickerOffset -= baseSpeed + scrollVelocity * 2.4;
-            const halfWidth = tickerWrap.scrollWidth / 2 || 1000;
-            if (tickerOffset <= -halfWidth) tickerOffset += halfWidth;
-            if (tickerOffset > 0) tickerOffset -= halfWidth;
+            // Velocity-reactive marquee ticker using cached width (zero layout thrash)
+            tickerOffset -= 0.65 + scrollVelocity * 2.4;
+            if (tickerOffset <= -tickerHalfWidth) tickerOffset += tickerHalfWidth;
+            if (tickerOffset > 0) tickerOffset -= tickerHalfWidth;
             tickerWrap.style.transform = `translate3d(${tickerOffset}px, 0, 0)`;
 
             // Update chapter HUD & contact state
             updateChapterUI(smoothScroll);
 
             // Render canvas layers
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, viewW, viewH);
             for (let i = 0; i < sceneData.length; i++) {
                 drawScene(i, smoothScroll);
             }
             drawParticles();
 
-            requestAnimationFrame(animate);
+            rafId = requestAnimationFrame(animate);
         }
     </script>
 </body>

@@ -723,8 +723,8 @@
         <article class="gallery-strip" data-index="0">
             <span class="strip-watermark">01</span>
             <div class="art-card">
-                <img src="glimpse_1.png" class="art-layer line-art" alt="Glimpse Sketch">
-                <img src="glimpse.png" class="art-layer color-art" alt="Glimpse Color">
+                <img src="assets/glimpse_line.webp" class="art-layer line-art" alt="Glimpse Sketch" decoding="async" fetchpriority="high">
+                <img src="assets/glimpse.webp" class="art-layer color-art" alt="Glimpse Color" decoding="async" fetchpriority="high">
             </div>
             <div class="card-info">
                 <span class="card-index">01 / 02</span>
@@ -737,8 +737,8 @@
         <article class="gallery-strip" data-index="1">
             <span class="strip-watermark">02</span>
             <div class="art-card">
-                <img src="miyabi.png" class="art-layer line-art" alt="Miyabi Sketch">
-                <img src="miyabi 2.png" class="art-layer color-art" alt="Miyabi Color">
+                <img src="assets/miyabi_line.webp" class="art-layer line-art" alt="Miyabi Sketch" decoding="async" fetchpriority="high">
+                <img src="assets/miyabi.webp" class="art-layer color-art" alt="Miyabi Color" decoding="async" fetchpriority="high">
             </div>
             <div class="card-info">
                 <span class="card-index">02 / 02</span>
@@ -761,8 +761,8 @@
 
         <div class="compare-stage" id="compare-stage">
             <div class="compare-frame" id="compare-frame">
-                <img id="lb-line" class="compare-line" src="glimpse_1.png" alt="Line art version">
-                <img id="lb-color" class="compare-color" src="glimpse.png" alt="Colored version">
+                <img id="lb-line" class="compare-line" src="assets/glimpse_line.webp" alt="Line art version" decoding="async">
+                <img id="lb-color" class="compare-color" src="assets/glimpse.webp" alt="Colored version" decoding="async">
                 <div class="compare-divider" id="compare-divider">
                     <div class="compare-handle">◀ ▶</div>
                 </div>
@@ -782,15 +782,15 @@
                 index: '01 / 02',
                 title: 'Glimpse',
                 subtitle: 'Digital Ink & Chromatic Study',
-                line: 'glimpse_1.png',
-                color: 'glimpse.png'
+                line: 'assets/glimpse_line.webp',
+                color: 'assets/glimpse.webp'
             },
             {
                 index: '02 / 02',
                 title: 'Miyabi',
                 subtitle: 'Cinematic Panorama Composition',
-                line: 'miyabi.png',
-                color: 'miyabi 2.png'
+                line: 'assets/miyabi_line.webp',
+                color: 'assets/miyabi.webp'
             }
         ];
 
@@ -810,7 +810,7 @@
         }
 
         window.addEventListener('load', () => {
-            setTimeout(openCurtain, 1350);
+            setTimeout(openCurtain, 950);
         });
 
         window.addEventListener('pageshow', (e) => {
@@ -827,19 +827,38 @@
                 introContent.style.opacity = '0';
                 overlay.classList.remove('curtain-open');
                 overlay.classList.add('curtain-closing');
-                setTimeout(() => { window.location.href = target; }, 850);
+                setTimeout(() => { window.location.href = target; }, 780);
             });
         });
 
         // ============================================
-        // MAGNETIC CURSOR TRACKING
+        // ON-DEMAND MAGNETIC CURSOR TRACKING (0% Idle CPU)
         // ============================================
         const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2, rx: window.innerWidth / 2, ry: window.innerHeight / 2 };
+        let cursorRaf = null;
+
+        function animateCursor() {
+            const dx = mouse.x - mouse.rx;
+            const dy = mouse.y - mouse.ry;
+            mouse.rx += dx * 0.18;
+            mouse.ry += dy * 0.18;
+            cursorDot.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0) translate(-50%, -50%)`;
+            cursorRing.style.transform = `translate3d(${mouse.rx}px, ${mouse.ry}px, 0) translate(-50%, -50%)`;
+
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                cursorRaf = requestAnimationFrame(animateCursor);
+            } else {
+                cursorRaf = null;
+            }
+        }
 
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
-        });
+            if (!cursorRaf && !document.hidden) {
+                cursorRaf = requestAnimationFrame(animateCursor);
+            }
+        }, { passive: true });
 
         document.addEventListener('mouseleave', () => document.body.classList.add('cursor-hidden'));
         document.addEventListener('mouseenter', () => document.body.classList.remove('cursor-hidden'));
@@ -855,26 +874,18 @@
             });
         });
 
-        function animateCursor() {
-            mouse.rx += (mouse.x - mouse.rx) * 0.16;
-            mouse.ry += (mouse.y - mouse.ry) * 0.16;
-            cursorDot.style.transform = `translate3d(${mouse.x}px, ${mouse.y}px, 0) translate(-50%, -50%)`;
-            cursorRing.style.transform = `translate3d(${mouse.rx}px, ${mouse.ry}px, 0) translate(-50%, -50%)`;
-            requestAnimationFrame(animateCursor);
-        }
-        animateCursor();
-
         // ============================================
-        // STRIP HOVER: RADIAL REVEAL ORIGIN & 3D PARALLAX
+        // STRIP HOVER: RADIAL REVEAL ORIGIN & 3D PARALLAX (Cached Rects)
         // ============================================
         strips.forEach(strip => {
             const artCard = strip.querySelector('.art-card');
             const colorArt = strip.querySelector('.color-art');
+            let cachedRect = null;
 
             strip.addEventListener('mouseenter', (e) => {
-                const rect = strip.getBoundingClientRect();
-                const mx = ((e.clientX - rect.left) / rect.width) * 100;
-                const my = ((e.clientY - rect.top) / rect.height) * 100;
+                cachedRect = strip.getBoundingClientRect();
+                const mx = ((e.clientX - cachedRect.left) / cachedRect.width) * 100;
+                const my = ((e.clientY - cachedRect.top) / cachedRect.height) * 100;
                 colorArt.style.setProperty('--mx', `${mx}%`);
                 colorArt.style.setProperty('--my', `${my}%`);
 
@@ -883,13 +894,14 @@
             });
 
             strip.addEventListener('mousemove', (e) => {
-                const rect = strip.getBoundingClientRect();
-                const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-                const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+                if (!cachedRect) cachedRect = strip.getBoundingClientRect();
+                const nx = ((e.clientX - cachedRect.left) / cachedRect.width - 0.5) * 2;
+                const ny = ((e.clientY - cachedRect.top) / cachedRect.height - 0.5) * 2;
                 artCard.style.transform = `perspective(900px) rotateY(${nx * 4.5}deg) rotateX(${-ny * 4.5}deg) translate3d(${nx * 8}px, ${ny * 6}px, 0)`;
-            });
+            }, { passive: true });
 
             strip.addEventListener('mouseleave', () => {
+                cachedRect = null;
                 artCard.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) translate3d(0, 0, 0)';
                 document.body.classList.remove('cursor-inspect');
                 cursorLabel.textContent = '';
@@ -914,6 +926,7 @@
 
         let currentLightboxIdx = 0;
         let isDraggingSlider = false;
+        let compareRect = null;
 
         function setComparePosition(ratio) {
             const clamped = Math.max(0, Math.min(1, ratio));
@@ -972,22 +985,27 @@
         });
 
         function updateSliderFromClientX(clientX) {
-            const rect = compareFrame.getBoundingClientRect();
-            const ratio = (clientX - rect.left) / rect.width;
+            if (!compareRect) compareRect = compareFrame.getBoundingClientRect();
+            const ratio = (clientX - compareRect.left) / compareRect.width;
             setComparePosition(ratio);
         }
 
         compareFrame.addEventListener('mousedown', (e) => {
             isDraggingSlider = true;
+            compareRect = compareFrame.getBoundingClientRect();
             updateSliderFromClientX(e.clientX);
         });
         window.addEventListener('mousemove', (e) => {
             if (isDraggingSlider) updateSliderFromClientX(e.clientX);
+        }, { passive: true });
+        window.addEventListener('mouseup', () => {
+            isDraggingSlider = false;
+            compareRect = null;
         });
-        window.addEventListener('mouseup', () => { isDraggingSlider = false; });
 
         compareFrame.addEventListener('touchstart', (e) => {
             isDraggingSlider = true;
+            compareRect = compareFrame.getBoundingClientRect();
             updateSliderFromClientX(e.touches[0].clientX);
         }, { passive: true });
         window.addEventListener('touchmove', (e) => {
@@ -995,7 +1013,10 @@
                 updateSliderFromClientX(e.touches[0].clientX);
             }
         }, { passive: true });
-        window.addEventListener('touchend', () => { isDraggingSlider = false; });
+        window.addEventListener('touchend', () => {
+            isDraggingSlider = false;
+            compareRect = null;
+        }, { passive: true });
     </script>
 </body>
 </html>
